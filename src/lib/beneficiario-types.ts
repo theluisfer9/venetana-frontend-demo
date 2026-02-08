@@ -8,84 +8,102 @@ export interface CatalogoItem {
 export interface MunicipioItem {
   code: string
   name: string
-  departamento_code: string
+}
+
+export interface LugarPobladoItem {
+  code: string
+  name: string
 }
 
 export interface CatalogosResponse {
   departamentos: CatalogoItem[]
-  instituciones: CatalogoItem[]
-  tipos_intervencion: CatalogoItem[]
-  niveles_privacion: CatalogoItem[]
+  clasificaciones_ipm: string[]
+  clasificaciones_pmt: string[]
+  clasificaciones_nbi: string[]
+  areas: string[]
+  niveles_inseguridad: string[]
+  fases: string[]
+  comunidades_linguisticas: string[]
+  pueblos: string[]
 }
 
 // ── Filtros ───────────────────────────────────────────────────────────
 
 export interface BeneficiarioFilters {
-  departamento_code?: string
-  municipio_code?: string
-  institucion_code?: string
-  tipo_intervencion_code?: string
-  sin_intervencion?: boolean
-  genero?: string
-  edad_min?: number
-  edad_max?: number
-  miembros_hogar_min?: number
-  miembros_hogar_max?: number
-  con_menores_5?: boolean
-  con_adultos_mayores?: boolean
-  nivel_privacion?: string
+  departamento_codigo?: string
+  municipio_codigo?: string
+  lugar_poblado_codigo?: string
+  area?: string
+  sexo_jefe?: string
   ipm_min?: number
   ipm_max?: number
+  ipm_clasificacion?: string
+  pmt_clasificacion?: string
+  nbi_clasificacion?: string
+  tiene_menores_5?: boolean
+  tiene_adultos_mayores?: boolean
+  tiene_embarazadas?: boolean
+  tiene_discapacidad?: boolean
+  nivel_inseguridad?: string
   buscar?: string
-}
-
-// ── Intervencion ─────────────────────────────────────────────────────
-
-export interface Intervencion {
-  institucion_code: string
-  institucion_name: string
-  tipo_code: string
-  tipo_name: string
+  anio?: number
+  fase?: string
 }
 
 // ── Beneficiario resumen (lista) ─────────────────────────────────────
 
 export interface BeneficiarioResumen {
-  id: number
-  dpi: string
+  hogar_id: number
+  cui_jefe_hogar: number | null
   nombre_completo: string
-  genero: string
-  edad: number
+  sexo_jefe_hogar: string
   departamento: string
+  departamento_codigo: string
   municipio: string
-  ipm: number
-  nivel_privacion: string
-  num_intervenciones: number
+  municipio_codigo: string
+  lugar_poblado: string
+  area: string
+  numero_personas: number
+  hombres: number
+  mujeres: number
+  ipm_gt: number
+  ipm_gt_clasificacion: string
+  pmt: number
+  pmt_clasificacion: string
+  nbi: number
+  nbi_clasificacion: string
 }
 
 // ── Beneficiario detalle ─────────────────────────────────────────────
 
-export interface BeneficiarioDetail {
-  id: number
-  dpi: string
-  primer_nombre: string
-  segundo_nombre: string
-  primer_apellido: string
-  segundo_apellido: string
-  nombre_completo: string
-  genero: string
-  fecha_nacimiento: string
-  edad: number
-  departamento_code: string
-  departamento: string
-  municipio_code: string
-  municipio: string
-  miembros_hogar: number
-  menores_5: number
-  adultos_mayores: number
-  ipm: number
-  nivel_privacion: string
-  intervenciones: Intervencion[]
+export interface BeneficiarioDetalle extends BeneficiarioResumen {
+  latitud: number | null
+  longitud: number | null
+  direccion: string
+  celular_jefe: number | null
+  cui_madre: number | null
+  nombre_madre: string
+  fase: string
+  fase_estado: string
+  anio: number | null
+  // Demograficos
+  total_personas: number | null
+  menores_5: number | null
+  adultos_mayores: number | null
+  personas_embarazadas: number | null
+  personas_con_dificultad: number | null
+  tipo_jefatura: string
+  comunidad_linguistica: string
+  pueblo_de_pertenencia: string
+  // Inseguridad alimentaria
+  nivel_inseguridad_alimentaria: string
+  puntos_elcsa: number | null
+  // Grupos etarios
+  primera_infancia: number | null
+  ninos: number | null
+  adolescentes: number | null
+  jovenes: number | null
+  adultos: number | null
 }
 
 // ── Paginacion ───────────────────────────────────────────────────────
@@ -99,29 +117,44 @@ export interface PaginatedResponse {
 
 // ── Stats ────────────────────────────────────────────────────────────
 
+export interface DepartamentoCount {
+  departamento: string
+  codigo: string
+  cantidad: number
+}
+
+export interface ClasificacionCount {
+  clasificacion: string
+  cantidad: number
+}
+
 export interface BeneficiarioStats {
   total: number
   promedio_ipm: number
-  genero_f: number
-  genero_m: number
-  hogares_con_menores: number
-  hogares_con_adultos_mayores: number
-  por_nivel_privacion: Record<string, number>
-  por_departamento: Record<string, number>
+  total_mujeres_jefas: number
+  total_hombres_jefes: number
+  total_personas: number
+  total_hombres: number
+  total_mujeres: number
+  por_departamento: DepartamentoCount[]
+  por_ipm_clasificacion: ClasificacionCount[]
 }
 
 // ── Dashboard ────────────────────────────────────────────────────────
 
-export interface TopIntervencion {
-  name: string
-  count: number
+export interface InseguridadCount {
+  nivel: string
+  cantidad: number
 }
 
 export interface DashboardStats {
-  total_beneficiarios: number
+  total_hogares: number
   departamentos_cubiertos: number
-  cobertura_intervenciones: number
+  municipios_cubiertos: number
   promedio_ipm: number
-  por_departamento: Record<string, number>
-  top_intervenciones: TopIntervencion[]
+  total_personas: number
+  hogares_pobres: number
+  hogares_no_pobres: number
+  por_departamento: DepartamentoCount[]
+  inseguridad_alimentaria: InseguridadCount[]
 }

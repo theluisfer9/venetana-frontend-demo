@@ -26,8 +26,8 @@ export default function DashboardWidgets() {
 
   const widgets = [
     {
-      title: 'Total Beneficiarios',
-      value: stats.total_beneficiarios.toLocaleString(),
+      title: 'Total Hogares',
+      value: (stats.total_hogares ?? 0).toLocaleString(),
       icon: Users,
       color: 'text-blue-600',
       bg: 'bg-blue-50',
@@ -40,25 +40,23 @@ export default function DashboardWidgets() {
       bg: 'bg-green-50',
     },
     {
-      title: 'Cobertura Intervenciones',
-      value: `${stats.cobertura_intervenciones}%`,
+      title: 'Municipios Cubiertos',
+      value: stats.municipios_cubiertos,
       icon: ShieldCheck,
       color: 'text-purple-600',
       bg: 'bg-purple-50',
     },
     {
       title: 'Promedio IPM',
-      value: stats.promedio_ipm.toFixed(2),
+      value: (stats.promedio_ipm ?? 0).toFixed(2),
       icon: BarChart3,
       color: 'text-orange-600',
       bg: 'bg-orange-50',
     },
   ]
 
-  const deptoEntries = Object.entries(stats.por_departamento).sort(
-    (a, b) => b[1] - a[1]
-  )
-  const maxDepto = deptoEntries.length > 0 ? deptoEntries[0][1] : 1
+  const deptoData = [...stats.por_departamento].sort((a, b) => b.cantidad - a.cantidad)
+  const maxDepto = deptoData.length > 0 ? deptoData[0].cantidad : 1
 
   return (
     <div className="space-y-6">
@@ -79,7 +77,7 @@ export default function DashboardWidgets() {
         ))}
       </div>
 
-      {/* Distribution + Top Interventions */}
+      {/* Distribution + Food Insecurity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {/* By department */}
         <Card>
@@ -87,32 +85,32 @@ export default function DashboardWidgets() {
             <CardTitle className="text-base">Distribucion por Departamento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {deptoEntries.map(([name, count]) => (
-              <div key={name} className="flex items-center gap-3">
-                <span className="text-sm w-36 truncate">{name}</span>
+            {deptoData.map((item) => (
+              <div key={item.codigo} className="flex items-center gap-3">
+                <span className="text-sm w-36 truncate">{item.departamento}</span>
                 <div className="flex-1 h-3 bg-gray-100 rounded-full overflow-hidden">
                   <div
                     className="h-full bg-blue-500 rounded-full"
-                    style={{ width: `${(count / maxDepto) * 100}%` }}
+                    style={{ width: `${(item.cantidad / maxDepto) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium w-8 text-right">{count}</span>
+                <span className="text-sm font-medium w-12 text-right">{item.cantidad.toLocaleString()}</span>
               </div>
             ))}
           </CardContent>
         </Card>
 
-        {/* Top interventions */}
+        {/* Food insecurity */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Top Intervenciones</CardTitle>
+            <CardTitle className="text-base">Inseguridad Alimentaria</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {stats.top_intervenciones.map((item, i) => (
-              <div key={item.name} className="flex items-center gap-3">
+            {stats.inseguridad_alimentaria.map((item, i) => (
+              <div key={item.nivel} className="flex items-center gap-3">
                 <span className="text-sm font-bold text-gray-400 w-6">{i + 1}</span>
-                <span className="text-sm flex-1 truncate">{item.name}</span>
-                <span className="text-sm font-medium">{item.count}</span>
+                <span className="text-sm flex-1 truncate">{item.nivel}</span>
+                <span className="text-sm font-medium">{item.cantidad.toLocaleString()}</span>
               </div>
             ))}
           </CardContent>

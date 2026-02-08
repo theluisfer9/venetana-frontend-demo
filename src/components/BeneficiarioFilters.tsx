@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Separator } from '@/components/ui/separator'
-import { useCatalogos, useMunicipios } from '@/hooks/use-beneficiarios'
+import { useCatalogos, useMunicipios, useLugaresPoblados } from '@/hooks/use-beneficiarios'
 import type { BeneficiarioFilters as Filters } from '@/lib/beneficiario-types'
 import { Search, FilterX } from 'lucide-react'
 
@@ -25,43 +25,66 @@ const EMPTY_VALUE = '__none__'
 export default function BeneficiarioFilters({ onApply, currentFilters }: Props) {
   const { data: catalogos } = useCatalogos()
 
-  const [departamento, setDepartamento] = useState(currentFilters.departamento_code ?? '')
-  const [municipio, setMunicipio] = useState(currentFilters.municipio_code ?? '')
-  const [institucion, setInstitucion] = useState(currentFilters.institucion_code ?? '')
-  const [tipoIntervencion, setTipoIntervencion] = useState(currentFilters.tipo_intervencion_code ?? '')
-  const [sinIntervencion, setSinIntervencion] = useState(currentFilters.sin_intervencion ?? false)
-  const [genero, setGenero] = useState(currentFilters.genero ?? '')
-  const [edadMin, setEdadMin] = useState(currentFilters.edad_min?.toString() ?? '')
-  const [edadMax, setEdadMax] = useState(currentFilters.edad_max?.toString() ?? '')
-  const [nivelPrivacion, setNivelPrivacion] = useState(currentFilters.nivel_privacion ?? '')
+  const [departamento, setDepartamento] = useState(currentFilters.departamento_codigo ?? '')
+  const [municipio, setMunicipio] = useState(currentFilters.municipio_codigo ?? '')
+  const [lugarPoblado, setLugarPoblado] = useState(currentFilters.lugar_poblado_codigo ?? '')
+  const [area, setArea] = useState(currentFilters.area ?? '')
+  const [sexoJefe, setSexoJefe] = useState(currentFilters.sexo_jefe ?? '')
+  const [ipmClasificacion, setIpmClasificacion] = useState(currentFilters.ipm_clasificacion ?? '')
+  const [pmtClasificacion, setPmtClasificacion] = useState(currentFilters.pmt_clasificacion ?? '')
+  const [nbiClasificacion, setNbiClasificacion] = useState(currentFilters.nbi_clasificacion ?? '')
+  const [nivelInseguridad, setNivelInseguridad] = useState(currentFilters.nivel_inseguridad ?? '')
+  const [fase, setFase] = useState(currentFilters.fase ?? '')
   const [ipmMin, setIpmMin] = useState(currentFilters.ipm_min?.toString() ?? '')
   const [ipmMax, setIpmMax] = useState(currentFilters.ipm_max?.toString() ?? '')
-  const [conMenores, setConMenores] = useState(currentFilters.con_menores_5 ?? false)
-  const [conAdultosMayores, setConAdultosMayores] = useState(currentFilters.con_adultos_mayores ?? false)
+  const [tieneMenores5, setTieneMenores5] = useState(currentFilters.tiene_menores_5 ?? false)
+  const [tieneAdultosMayores, setTieneAdultosMayores] = useState(currentFilters.tiene_adultos_mayores ?? false)
+  const [tieneEmbarazadas, setTieneEmbarazadas] = useState(currentFilters.tiene_embarazadas ?? false)
+  const [tieneDiscapacidad, setTieneDiscapacidad] = useState(currentFilters.tiene_discapacidad ?? false)
   const [buscar, setBuscar] = useState(currentFilters.buscar ?? '')
 
   const { data: municipios } = useMunicipios(departamento || undefined)
+  const { data: lugaresPoblados } = useLugaresPoblados(municipio || undefined)
 
-  // Reset municipio when departamento changes
+  const isInitialMount = useRef(true)
+
+  // Reset municipio and lugar poblado when departamento changes
   useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false
+      return
+    }
     setMunicipio('')
+    setLugarPoblado('')
   }, [departamento])
+
+  // Reset lugar poblado when municipio changes (skip when cleared by departamento effect)
+  const prevMunicipio = useRef(municipio)
+  useEffect(() => {
+    if (prevMunicipio.current === municipio) return
+    prevMunicipio.current = municipio
+    if (municipio === '') return
+    setLugarPoblado('')
+  }, [municipio])
 
   function handleApply() {
     const filters: Filters = {}
-    if (departamento) filters.departamento_code = departamento
-    if (municipio) filters.municipio_code = municipio
-    if (institucion) filters.institucion_code = institucion
-    if (tipoIntervencion) filters.tipo_intervencion_code = tipoIntervencion
-    if (sinIntervencion) filters.sin_intervencion = true
-    if (genero) filters.genero = genero
-    if (edadMin) filters.edad_min = parseInt(edadMin)
-    if (edadMax) filters.edad_max = parseInt(edadMax)
-    if (nivelPrivacion) filters.nivel_privacion = nivelPrivacion
+    if (departamento) filters.departamento_codigo = departamento
+    if (municipio) filters.municipio_codigo = municipio
+    if (lugarPoblado) filters.lugar_poblado_codigo = lugarPoblado
+    if (area) filters.area = area
+    if (sexoJefe) filters.sexo_jefe = sexoJefe
+    if (ipmClasificacion) filters.ipm_clasificacion = ipmClasificacion
+    if (pmtClasificacion) filters.pmt_clasificacion = pmtClasificacion
+    if (nbiClasificacion) filters.nbi_clasificacion = nbiClasificacion
+    if (nivelInseguridad) filters.nivel_inseguridad = nivelInseguridad
+    if (fase) filters.fase = fase
     if (ipmMin) filters.ipm_min = parseFloat(ipmMin)
     if (ipmMax) filters.ipm_max = parseFloat(ipmMax)
-    if (conMenores) filters.con_menores_5 = true
-    if (conAdultosMayores) filters.con_adultos_mayores = true
+    if (tieneMenores5) filters.tiene_menores_5 = true
+    if (tieneAdultosMayores) filters.tiene_adultos_mayores = true
+    if (tieneEmbarazadas) filters.tiene_embarazadas = true
+    if (tieneDiscapacidad) filters.tiene_discapacidad = true
     if (buscar.trim()) filters.buscar = buscar.trim()
     onApply(filters)
   }
@@ -69,17 +92,20 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
   function handleClear() {
     setDepartamento('')
     setMunicipio('')
-    setInstitucion('')
-    setTipoIntervencion('')
-    setSinIntervencion(false)
-    setGenero('')
-    setEdadMin('')
-    setEdadMax('')
-    setNivelPrivacion('')
+    setLugarPoblado('')
+    setArea('')
+    setSexoJefe('')
+    setIpmClasificacion('')
+    setPmtClasificacion('')
+    setNbiClasificacion('')
+    setNivelInseguridad('')
+    setFase('')
     setIpmMin('')
     setIpmMax('')
-    setConMenores(false)
-    setConAdultosMayores(false)
+    setTieneMenores5(false)
+    setTieneAdultosMayores(false)
+    setTieneEmbarazadas(false)
+    setTieneDiscapacidad(false)
     setBuscar('')
     onApply({})
   }
@@ -100,7 +126,7 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
         <div className="relative mt-1">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Nombre o DPI"
+            placeholder="Nombre o CUI"
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
             className="pl-9"
@@ -136,41 +162,28 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
               ))}
             </SelectContent>
           </Select>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Intervencion */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Intervencion</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(institucion)} onValueChange={onSelectChange(setInstitucion)}>
-            <SelectTrigger><SelectValue placeholder="Institucion" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.instituciones.map((i) => (
-                <SelectItem key={i.code} value={i.code}>{i.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(tipoIntervencion)} onValueChange={onSelectChange(setTipoIntervencion)}>
-            <SelectTrigger><SelectValue placeholder="Tipo intervencion" /></SelectTrigger>
+          <Select
+            value={selectValue(lugarPoblado)}
+            onValueChange={onSelectChange(setLugarPoblado)}
+            disabled={!municipio}
+          >
+            <SelectTrigger><SelectValue placeholder="Lugar poblado" /></SelectTrigger>
             <SelectContent>
               <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.tipos_intervencion.map((t) => (
-                <SelectItem key={t.code} value={t.code}>{t.name}</SelectItem>
+              {lugaresPoblados?.map((lp) => (
+                <SelectItem key={lp.code} value={lp.code}>{lp.name}</SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="sin-intervencion"
-              checked={sinIntervencion}
-              onCheckedChange={(v) => setSinIntervencion(!!v)}
-            />
-            <label htmlFor="sin-intervencion" className="text-sm">Sin intervencion</label>
-          </div>
+          <Select value={selectValue(area)} onValueChange={onSelectChange(setArea)}>
+            <SelectTrigger><SelectValue placeholder="Area" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.areas.map((a) => (
+                <SelectItem key={a} value={a}>{a}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
@@ -180,43 +193,45 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
       <div>
         <Label className="text-xs font-semibold text-gray-500 uppercase">Demograficos</Label>
         <div className="space-y-2 mt-1">
-          <Select value={selectValue(genero)} onValueChange={onSelectChange(setGenero)}>
-            <SelectTrigger><SelectValue placeholder="Genero" /></SelectTrigger>
+          <Select value={selectValue(sexoJefe)} onValueChange={onSelectChange(setSexoJefe)}>
+            <SelectTrigger><SelectValue placeholder="Sexo jefe hogar" /></SelectTrigger>
             <SelectContent>
               <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              <SelectItem value="F">Femenino</SelectItem>
-              <SelectItem value="M">Masculino</SelectItem>
+              <SelectItem value="Femenino">Femenino</SelectItem>
+              <SelectItem value="Masculino">Masculino</SelectItem>
             </SelectContent>
           </Select>
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              placeholder="Edad min"
-              value={edadMin}
-              onChange={(e) => setEdadMin(e.target.value)}
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tiene-menores-5"
+              checked={tieneMenores5}
+              onCheckedChange={(v) => setTieneMenores5(!!v)}
             />
-            <Input
-              type="number"
-              placeholder="Edad max"
-              value={edadMax}
-              onChange={(e) => setEdadMax(e.target.value)}
-            />
+            <label htmlFor="tiene-menores-5" className="text-sm">Con menores &lt;5</label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="con-menores"
-              checked={conMenores}
-              onCheckedChange={(v) => setConMenores(!!v)}
+              id="tiene-adultos-mayores"
+              checked={tieneAdultosMayores}
+              onCheckedChange={(v) => setTieneAdultosMayores(!!v)}
             />
-            <label htmlFor="con-menores" className="text-sm">Con menores &lt;5</label>
+            <label htmlFor="tiene-adultos-mayores" className="text-sm">Con adultos mayores</label>
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
-              id="con-adultos-mayores"
-              checked={conAdultosMayores}
-              onCheckedChange={(v) => setConAdultosMayores(!!v)}
+              id="tiene-embarazadas"
+              checked={tieneEmbarazadas}
+              onCheckedChange={(v) => setTieneEmbarazadas(!!v)}
             />
-            <label htmlFor="con-adultos-mayores" className="text-sm">Con adultos mayores</label>
+            <label htmlFor="tiene-embarazadas" className="text-sm">Con embarazadas</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tiene-discapacidad"
+              checked={tieneDiscapacidad}
+              onCheckedChange={(v) => setTieneDiscapacidad(!!v)}
+            />
+            <label htmlFor="tiene-discapacidad" className="text-sm">Con discapacidad</label>
           </div>
         </div>
       </div>
@@ -227,12 +242,30 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
       <div>
         <Label className="text-xs font-semibold text-gray-500 uppercase">Pobreza</Label>
         <div className="space-y-2 mt-1">
-          <Select value={selectValue(nivelPrivacion)} onValueChange={onSelectChange(setNivelPrivacion)}>
-            <SelectTrigger><SelectValue placeholder="Nivel privacion" /></SelectTrigger>
+          <Select value={selectValue(ipmClasificacion)} onValueChange={onSelectChange(setIpmClasificacion)}>
+            <SelectTrigger><SelectValue placeholder="Clasificacion IPM" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.niveles_privacion.map((n) => (
-                <SelectItem key={n.code} value={n.code}>{n.name}</SelectItem>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.clasificaciones_ipm.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectValue(pmtClasificacion)} onValueChange={onSelectChange(setPmtClasificacion)}>
+            <SelectTrigger><SelectValue placeholder="Clasificacion PMT" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.clasificaciones_pmt.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectValue(nbiClasificacion)} onValueChange={onSelectChange(setNbiClasificacion)}>
+            <SelectTrigger><SelectValue placeholder="Clasificacion NBI" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.clasificaciones_nbi.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -252,6 +285,42 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
               onChange={(e) => setIpmMax(e.target.value)}
             />
           </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Inseguridad Alimentaria */}
+      <div>
+        <Label className="text-xs font-semibold text-gray-500 uppercase">Inseguridad Alimentaria</Label>
+        <div className="space-y-2 mt-1">
+          <Select value={selectValue(nivelInseguridad)} onValueChange={onSelectChange(setNivelInseguridad)}>
+            <SelectTrigger><SelectValue placeholder="Nivel" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+              {catalogos?.niveles_inseguridad.map((n) => (
+                <SelectItem key={n} value={n}>{n}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Fase */}
+      <div>
+        <Label className="text-xs font-semibold text-gray-500 uppercase">Fase</Label>
+        <div className="space-y-2 mt-1">
+          <Select value={selectValue(fase)} onValueChange={onSelectChange(setFase)}>
+            <SelectTrigger><SelectValue placeholder="Fase" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.fases.map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 

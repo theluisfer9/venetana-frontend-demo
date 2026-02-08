@@ -28,15 +28,15 @@ export default function StatsBar({ stats, isLoading }: StatsBarProps) {
 
   if (!stats) return null
 
-  const pctF = stats.total > 0 ? Math.round((stats.genero_f / stats.total) * 100) : 0
-  const pctM = 100 - pctF
-
   return (
     <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-      <StatCard label="Total filtrados" value={stats.total} />
-      <StatCard label="Promedio IPM" value={stats.promedio_ipm.toFixed(2)} />
-      <StatCard label="Genero (F / M)" value={`${pctF}% / ${pctM}%`} />
-      <StatCard label="Hogares c/ menores <5" value={stats.hogares_con_menores} />
+      <StatCard label="Total hogares" value={(stats.total ?? 0).toLocaleString()} />
+      <StatCard label="Promedio IPM" value={(stats.promedio_ipm ?? 0).toFixed(2)} />
+      <StatCard
+        label="Jefatura (F / M)"
+        value={`${(stats.total_mujeres_jefas ?? 0).toLocaleString()} / ${(stats.total_hombres_jefes ?? 0).toLocaleString()}`}
+      />
+      <StatCard label="Total personas" value={(stats.total_personas ?? 0).toLocaleString()} />
     </div>
   )
 }

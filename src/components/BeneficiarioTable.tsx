@@ -21,22 +21,16 @@ interface Props {
   onSelectBeneficiario: (id: number) => void
 }
 
-function ipmColor(ipm: number): string {
-  if (ipm >= 0.7) return 'destructive'
-  if (ipm >= 0.4) return 'secondary'
-  return 'outline'
-}
-
-function privacionPill(nivel: string) {
+function clasificacionPill(clasificacion: string) {
   const colors: Record<string, string> = {
-    extrema: 'bg-red-100 text-red-800',
-    alta: 'bg-orange-100 text-orange-800',
-    media: 'bg-yellow-100 text-yellow-800',
-    baja: 'bg-green-100 text-green-800',
+    'Pobreza Extrema': 'bg-red-100 text-red-800',
+    'Pobreza': 'bg-orange-100 text-orange-800',
+    'Pobreza Moderada': 'bg-yellow-100 text-yellow-800',
+    'No Pobre': 'bg-green-100 text-green-800',
   }
   return (
-    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[nivel] ?? 'bg-gray-100 text-gray-800'}`}>
-      {nivel.charAt(0).toUpperCase() + nivel.slice(1)}
+    <span className={`inline-block px-2 py-0.5 rounded-full text-xs font-medium ${colors[clasificacion] ?? 'bg-gray-100 text-gray-800'}`}>
+      {clasificacion}
     </span>
   )
 }
@@ -78,37 +72,37 @@ export default function BeneficiarioTable({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Nombre</TableHead>
-              <TableHead>DPI</TableHead>
-              <TableHead>Genero</TableHead>
-              <TableHead>Edad</TableHead>
+              <TableHead>Jefe Hogar</TableHead>
+              <TableHead>CUI</TableHead>
+              <TableHead>Sexo</TableHead>
               <TableHead>Departamento</TableHead>
               <TableHead>Municipio</TableHead>
+              <TableHead>Lugar Poblado</TableHead>
+              <TableHead>No. Personas</TableHead>
               <TableHead>IPM</TableHead>
-              <TableHead>Privacion</TableHead>
-              <TableHead className="text-center">Intervenciones</TableHead>
+              <TableHead>Clasif. IPM</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {data.items.map((b) => (
               <TableRow
-                key={b.id}
+                key={b.hogar_id}
                 className="cursor-pointer hover:bg-gray-50"
-                onClick={() => onSelectBeneficiario(b.id)}
+                onClick={() => onSelectBeneficiario(b.hogar_id)}
               >
                 <TableCell className="font-medium">{b.nombre_completo}</TableCell>
-                <TableCell className="font-mono text-xs">{b.dpi}</TableCell>
-                <TableCell>{b.genero === 'F' ? 'Femenino' : 'Masculino'}</TableCell>
-                <TableCell>{b.edad}</TableCell>
+                <TableCell className="font-mono text-xs">{b.cui_jefe_hogar ?? 'N/A'}</TableCell>
+                <TableCell>{b.sexo_jefe_hogar === 'Femenino' ? 'F' : 'M'}</TableCell>
                 <TableCell>{b.departamento}</TableCell>
                 <TableCell>{b.municipio}</TableCell>
+                <TableCell>{b.lugar_poblado}</TableCell>
+                <TableCell className="text-center">{b.numero_personas}</TableCell>
                 <TableCell>
-                  <Badge variant={ipmColor(b.ipm) as 'destructive' | 'secondary' | 'outline'}>
-                    {b.ipm.toFixed(2)}
+                  <Badge variant={(b.ipm_gt ?? 0) >= 0.7 ? 'destructive' : (b.ipm_gt ?? 0) >= 0.4 ? 'secondary' : 'outline'}>
+                    {(b.ipm_gt ?? 0).toFixed(2)}
                   </Badge>
                 </TableCell>
-                <TableCell>{privacionPill(b.nivel_privacion)}</TableCell>
-                <TableCell className="text-center">{b.num_intervenciones}</TableCell>
+                <TableCell>{clasificacionPill(b.ipm_gt_clasificacion)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

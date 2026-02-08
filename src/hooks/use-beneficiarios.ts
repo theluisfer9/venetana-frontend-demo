@@ -4,8 +4,9 @@ import { isAuthenticated } from '@/hooks/use-auth'
 import type {
   CatalogosResponse,
   MunicipioItem,
+  LugarPobladoItem,
   PaginatedResponse,
-  BeneficiarioDetail,
+  BeneficiarioDetalle,
   BeneficiarioStats,
   DashboardStats,
   BeneficiarioFilters,
@@ -39,14 +40,26 @@ export function useCatalogos() {
   })
 }
 
-export function useMunicipios(departamentoCode: string | undefined) {
+export function useMunicipios(departamentoCodigo: string | undefined) {
   return useQuery({
-    queryKey: ['beneficiarios', 'municipios', departamentoCode],
+    queryKey: ['beneficiarios', 'municipios', departamentoCodigo],
     queryFn: () =>
       apiClient.get<MunicipioItem[]>(
-        `/beneficiarios/catalogos/municipios?departamento_code=${departamentoCode}`
+        `/beneficiarios/catalogos/municipios?departamento_codigo=${departamentoCodigo}`
       ),
-    enabled: isAuthenticated() && !!departamentoCode,
+    enabled: isAuthenticated() && !!departamentoCodigo,
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export function useLugaresPoblados(municipioCodigo: string | undefined) {
+  return useQuery({
+    queryKey: ['beneficiarios', 'lugares-poblados', municipioCodigo],
+    queryFn: () =>
+      apiClient.get<LugarPobladoItem[]>(
+        `/beneficiarios/catalogos/lugares-poblados?municipio_codigo=${municipioCodigo}`
+      ),
+    enabled: isAuthenticated() && !!municipioCodigo,
     staleTime: 10 * 60 * 1000,
   })
 }
@@ -66,11 +79,11 @@ export function useBeneficiarios(
   })
 }
 
-export function useBeneficiarioDetail(id: number | null) {
+export function useBeneficiarioDetail(hogarId: number | null) {
   return useQuery({
-    queryKey: ['beneficiarios', 'detail', id],
-    queryFn: () => apiClient.get<BeneficiarioDetail>(`/beneficiarios/${id}`),
-    enabled: isAuthenticated() && id !== null,
+    queryKey: ['beneficiarios', 'detail', hogarId],
+    queryFn: () => apiClient.get<BeneficiarioDetalle>(`/beneficiarios/${hogarId}`),
+    enabled: isAuthenticated() && hogarId !== null,
   })
 }
 
