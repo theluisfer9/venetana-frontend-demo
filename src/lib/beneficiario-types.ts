@@ -25,6 +25,10 @@ export interface CatalogosResponse {
   fases: string[]
   comunidades_linguisticas: string[]
   pueblos: string[]
+  fuentes_agua: string[]
+  tipos_sanitario: string[]
+  tipos_alumbrado: string[]
+  combustibles_cocina: string[]
 }
 
 // ── Filtros ───────────────────────────────────────────────────────────
@@ -45,6 +49,17 @@ export interface BeneficiarioFilters {
   tiene_embarazadas?: boolean
   tiene_discapacidad?: boolean
   nivel_inseguridad?: string
+  fuente_agua?: string
+  tipo_sanitario?: string
+  alumbrado?: string
+  combustible_cocina?: string
+  tiene_internet?: boolean
+  tiene_computadora?: boolean
+  tiene_refrigerador?: boolean
+  con_hacinamiento?: boolean
+  con_analfabetismo?: boolean
+  con_menores_sin_escuela?: boolean
+  sin_empleo?: boolean
   buscar?: string
   anio?: number
   fase?: string

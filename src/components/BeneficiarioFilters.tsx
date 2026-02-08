@@ -41,6 +41,17 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
   const [tieneAdultosMayores, setTieneAdultosMayores] = useState(currentFilters.tiene_adultos_mayores ?? false)
   const [tieneEmbarazadas, setTieneEmbarazadas] = useState(currentFilters.tiene_embarazadas ?? false)
   const [tieneDiscapacidad, setTieneDiscapacidad] = useState(currentFilters.tiene_discapacidad ?? false)
+  const [fuenteAgua, setFuenteAgua] = useState(currentFilters.fuente_agua ?? '')
+  const [tipoSanitario, setTipoSanitario] = useState(currentFilters.tipo_sanitario ?? '')
+  const [alumbrado, setAlumbrado] = useState(currentFilters.alumbrado ?? '')
+  const [combustibleCocina, setCombustibleCocina] = useState(currentFilters.combustible_cocina ?? '')
+  const [tieneInternet, setTieneInternet] = useState(currentFilters.tiene_internet ?? false)
+  const [tieneComputadora, setTieneComputadora] = useState(currentFilters.tiene_computadora ?? false)
+  const [tieneRefrigerador, setTieneRefrigerador] = useState(currentFilters.tiene_refrigerador ?? false)
+  const [conHacinamiento, setConHacinamiento] = useState(currentFilters.con_hacinamiento ?? false)
+  const [conAnalfabetismo, setConAnalfabetismo] = useState(currentFilters.con_analfabetismo ?? false)
+  const [conMenoresSinEscuela, setConMenoresSinEscuela] = useState(currentFilters.con_menores_sin_escuela ?? false)
+  const [sinEmpleo, setSinEmpleo] = useState(currentFilters.sin_empleo ?? false)
   const [buscar, setBuscar] = useState(currentFilters.buscar ?? '')
 
   const { data: municipios } = useMunicipios(departamento || undefined)
@@ -85,6 +96,17 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     if (tieneAdultosMayores) filters.tiene_adultos_mayores = true
     if (tieneEmbarazadas) filters.tiene_embarazadas = true
     if (tieneDiscapacidad) filters.tiene_discapacidad = true
+    if (fuenteAgua) filters.fuente_agua = fuenteAgua
+    if (tipoSanitario) filters.tipo_sanitario = tipoSanitario
+    if (alumbrado) filters.alumbrado = alumbrado
+    if (combustibleCocina) filters.combustible_cocina = combustibleCocina
+    if (tieneInternet) filters.tiene_internet = true
+    if (tieneComputadora) filters.tiene_computadora = true
+    if (tieneRefrigerador) filters.tiene_refrigerador = true
+    if (conHacinamiento) filters.con_hacinamiento = true
+    if (conAnalfabetismo) filters.con_analfabetismo = true
+    if (conMenoresSinEscuela) filters.con_menores_sin_escuela = true
+    if (sinEmpleo) filters.sin_empleo = true
     if (buscar.trim()) filters.buscar = buscar.trim()
     onApply(filters)
   }
@@ -106,6 +128,17 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     setTieneAdultosMayores(false)
     setTieneEmbarazadas(false)
     setTieneDiscapacidad(false)
+    setFuenteAgua('')
+    setTipoSanitario('')
+    setAlumbrado('')
+    setCombustibleCocina('')
+    setTieneInternet(false)
+    setTieneComputadora(false)
+    setTieneRefrigerador(false)
+    setConHacinamiento(false)
+    setConAnalfabetismo(false)
+    setConMenoresSinEscuela(false)
+    setSinEmpleo(false)
     setBuscar('')
     onApply({})
   }
@@ -303,6 +336,125 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
               ))}
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Servicios basicos */}
+      <div>
+        <Label className="text-xs font-semibold text-gray-500 uppercase">Servicios Basicos</Label>
+        <div className="space-y-2 mt-1">
+          <Select value={selectValue(fuenteAgua)} onValueChange={onSelectChange(setFuenteAgua)}>
+            <SelectTrigger><SelectValue placeholder="Fuente de agua" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+              {catalogos?.fuentes_agua.map((f) => (
+                <SelectItem key={f} value={f}>{f}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectValue(tipoSanitario)} onValueChange={onSelectChange(setTipoSanitario)}>
+            <SelectTrigger><SelectValue placeholder="Tipo sanitario" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+              {catalogos?.tipos_sanitario.map((t) => (
+                <SelectItem key={t} value={t}>{t}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectValue(alumbrado)} onValueChange={onSelectChange(setAlumbrado)}>
+            <SelectTrigger><SelectValue placeholder="Alumbrado" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+              {catalogos?.tipos_alumbrado.map((a) => (
+                <SelectItem key={a} value={a}>{a}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectValue(combustibleCocina)} onValueChange={onSelectChange(setCombustibleCocina)}>
+            <SelectTrigger><SelectValue placeholder="Combustible cocina" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+              {catalogos?.combustibles_cocina.map((c) => (
+                <SelectItem key={c} value={c}>{c}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Bienes del hogar */}
+      <div>
+        <Label className="text-xs font-semibold text-gray-500 uppercase">Bienes del Hogar</Label>
+        <div className="space-y-2 mt-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tiene-internet"
+              checked={tieneInternet}
+              onCheckedChange={(v) => setTieneInternet(!!v)}
+            />
+            <label htmlFor="tiene-internet" className="text-sm">Con internet</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tiene-computadora"
+              checked={tieneComputadora}
+              onCheckedChange={(v) => setTieneComputadora(!!v)}
+            />
+            <label htmlFor="tiene-computadora" className="text-sm">Con computadora</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="tiene-refrigerador"
+              checked={tieneRefrigerador}
+              onCheckedChange={(v) => setTieneRefrigerador(!!v)}
+            />
+            <label htmlFor="tiene-refrigerador" className="text-sm">Con refrigerador</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="con-hacinamiento"
+              checked={conHacinamiento}
+              onCheckedChange={(v) => setConHacinamiento(!!v)}
+            />
+            <label htmlFor="con-hacinamiento" className="text-sm">Con hacinamiento</label>
+          </div>
+        </div>
+      </div>
+
+      <Separator />
+
+      {/* Educacion y empleo */}
+      <div>
+        <Label className="text-xs font-semibold text-gray-500 uppercase">Educacion y Empleo</Label>
+        <div className="space-y-2 mt-1">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="con-analfabetismo"
+              checked={conAnalfabetismo}
+              onCheckedChange={(v) => setConAnalfabetismo(!!v)}
+            />
+            <label htmlFor="con-analfabetismo" className="text-sm">Con analfabetismo</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="con-menores-sin-escuela"
+              checked={conMenoresSinEscuela}
+              onCheckedChange={(v) => setConMenoresSinEscuela(!!v)}
+            />
+            <label htmlFor="con-menores-sin-escuela" className="text-sm">Menores sin escuela</label>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="sin-empleo"
+              checked={sinEmpleo}
+              onCheckedChange={(v) => setSinEmpleo(!!v)}
+            />
+            <label htmlFor="sin-empleo" className="text-sm">Sin empleo en hogar</label>
+          </div>
         </div>
       </div>
 
