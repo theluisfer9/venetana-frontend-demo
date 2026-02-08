@@ -1,6 +1,7 @@
 import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useState } from 'react'
 import { useLogin, isAuthenticated } from '@/hooks/use-auth'
+import { apiClient, ApiError, clearTokens } from '@/lib/api'
 
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -90,9 +91,17 @@ export default (parentRoute: AnyRoute) =>
     path: '/login',
     component: LoginPage,
     getParentRoute: () => parentRoute,
-    beforeLoad: () => {
-      if (isAuthenticated()) {
+    beforeLoad: async () => {
+      if (!isAuthenticated()) return
+      try {
+        await apiClient.get('/auth/me')
         throw redirect({ to: '/dashboard' })
+      } catch (e) {
+        if (e instanceof ApiError) {
+          clearTokens()
+          return
+        }
+        throw e
       }
     },
   })

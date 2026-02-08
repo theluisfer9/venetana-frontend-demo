@@ -58,6 +58,13 @@ async function request<T>(
   const json = await response.json()
 
   if (!response.ok) {
+    if (response.status === 401 && path !== '/auth/login') {
+      clearTokens()
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+      throw new ApiError(401, 'Sesión expirada')
+    }
     const message =
       (json as WrappedResponse<unknown>).message ??
       (json as { detail?: string }).detail ??
@@ -84,6 +91,13 @@ async function download(path: string, filename: string): Promise<void> {
   const response = await fetch(`${BASE_URL}${path}`, { headers })
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens()
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+      throw new ApiError(401, 'Sesión expirada')
+    }
     throw new ApiError(response.status, 'Error al descargar archivo')
   }
 

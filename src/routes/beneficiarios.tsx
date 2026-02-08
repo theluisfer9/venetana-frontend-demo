@@ -304,45 +304,38 @@ function BeneficiariosPage() {
         {/* Stats bar */}
         <StatsBar stats={stats} isLoading={statsLoading} />
 
-        {/* Main layout: filters + table/detail */}
-        <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4">
-          {/* Filters panel */}
-          <div className="order-2 lg:order-1">
-            <BeneficiarioFiltersPanel
-              onApply={handleApplyFilters}
-              currentFilters={filters}
+        {/* Filters bar */}
+        <BeneficiarioFiltersPanel
+          onApply={handleApplyFilters}
+          currentFilters={filters}
+        />
+
+        {/* Content area */}
+        {selectedId !== null ? (
+          <div className="space-y-3">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedId(null)}
+            >
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Volver a lista
+            </Button>
+            <BeneficiarioDetailPanel
+              id={selectedId}
+              onClose={() => setSelectedId(null)}
             />
           </div>
-
-          {/* Content area */}
-          <div className="order-1 lg:order-2">
-            {selectedId !== null ? (
-              <div className="space-y-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setSelectedId(null)}
-                >
-                  <ArrowLeft className="mr-1 h-4 w-4" />
-                  Volver a lista
-                </Button>
-                <BeneficiarioDetailPanel
-                  id={selectedId}
-                  onClose={() => setSelectedId(null)}
-                />
-              </div>
-            ) : (
-              <BeneficiarioTable
-                data={data}
-                isLoading={isLoading}
-                offset={offset}
-                limit={limit}
-                onPageChange={setOffset}
-                onSelectBeneficiario={setSelectedId}
-              />
-            )}
-          </div>
-        </div>
+        ) : (
+          <BeneficiarioTable
+            data={data}
+            isLoading={isLoading}
+            offset={offset}
+            limit={limit}
+            onPageChange={setOffset}
+            onSelectBeneficiario={setSelectedId}
+          />
+        )}
       </div>
     </div>
   )

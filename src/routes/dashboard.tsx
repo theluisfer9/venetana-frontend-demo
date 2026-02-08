@@ -29,6 +29,10 @@ function DashboardPage() {
   }
 
   if (isError || !user) {
+    if (!isAuthenticated()) {
+      navigate({ to: '/login' })
+      return null
+    }
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-72px)]">
         <p className="text-destructive">Error al cargar el perfil</p>

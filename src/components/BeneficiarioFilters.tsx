@@ -10,10 +10,9 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Separator } from '@/components/ui/separator'
 import { useCatalogos, useMunicipios, useLugaresPoblados } from '@/hooks/use-beneficiarios'
 import type { BeneficiarioFilters as Filters } from '@/lib/beneficiario-types'
-import { Search, FilterX } from 'lucide-react'
+import { Search, FilterX, ChevronDown, ChevronUp, SlidersHorizontal } from 'lucide-react'
 
 interface Props {
   onApply: (filters: Filters) => void
@@ -24,6 +23,7 @@ const EMPTY_VALUE = '__none__'
 
 export default function BeneficiarioFilters({ onApply, currentFilters }: Props) {
   const { data: catalogos } = useCatalogos()
+  const [expanded, setExpanded] = useState(false)
 
   const [departamento, setDepartamento] = useState(currentFilters.departamento_codigo ?? '')
   const [municipio, setMunicipio] = useState(currentFilters.municipio_codigo ?? '')
@@ -59,7 +59,6 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
 
   const isInitialMount = useRef(true)
 
-  // Reset municipio and lugar poblado when departamento changes
   useEffect(() => {
     if (isInitialMount.current) {
       isInitialMount.current = false
@@ -69,7 +68,6 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     setLugarPoblado('')
   }, [departamento])
 
-  // Reset lugar poblado when municipio changes (skip when cleared by departamento effect)
   const prevMunicipio = useRef(municipio)
   useEffect(() => {
     if (prevMunicipio.current === municipio) return
@@ -77,6 +75,19 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     if (municipio === '') return
     setLugarPoblado('')
   }, [municipio])
+
+  // Count active filters for the badge
+  const activeCount = [
+    departamento, municipio, lugarPoblado, area, sexoJefe,
+    ipmClasificacion, pmtClasificacion, nbiClasificacion,
+    nivelInseguridad, fase, ipmMin, ipmMax,
+    fuenteAgua, tipoSanitario, alumbrado, combustibleCocina,
+    buscar.trim(),
+  ].filter(Boolean).length + [
+    tieneMenores5, tieneAdultosMayores, tieneEmbarazadas, tieneDiscapacidad,
+    tieneInternet, tieneComputadora, tieneRefrigerador, conHacinamiento,
+    conAnalfabetismo, conMenoresSinEscuela, sinEmpleo,
+  ].filter(Boolean).length
 
   function handleApply() {
     const filters: Filters = {}
@@ -152,342 +163,233 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
   }
 
   return (
-    <div className="space-y-4 p-4 bg-white rounded-lg shadow-sm border">
-      {/* Busqueda */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Busqueda</Label>
-        <div className="relative mt-1">
+    <div className="bg-white rounded-lg shadow-sm border">
+      {/* Top bar: search + toggle + actions */}
+      <div className="flex items-center gap-3 p-3">
+        <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Nombre o CUI"
+            placeholder="Buscar por nombre o CUI..."
             value={buscar}
             onChange={(e) => setBuscar(e.target.value)}
-            className="pl-9"
+            className="pl-9 h-9"
+            onKeyDown={(e) => e.key === 'Enter' && handleApply()}
           />
         </div>
-      </div>
 
-      <Separator />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setExpanded(!expanded)}
+          className="gap-1.5"
+        >
+          <SlidersHorizontal className="h-4 w-4" />
+          Filtros
+          {activeCount > 0 && (
+            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-[10px] font-bold text-white">
+              {activeCount}
+            </span>
+          )}
+          {expanded ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+        </Button>
 
-      {/* Geograficos */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Geograficos</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(departamento)} onValueChange={onSelectChange(setDepartamento)}>
-            <SelectTrigger><SelectValue placeholder="Departamento" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.departamentos.map((d) => (
-                <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={selectValue(municipio)}
-            onValueChange={onSelectChange(setMunicipio)}
-            disabled={!departamento}
-          >
-            <SelectTrigger><SelectValue placeholder="Municipio" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {municipios?.map((m) => (
-                <SelectItem key={m.code} value={m.code}>{m.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select
-            value={selectValue(lugarPoblado)}
-            onValueChange={onSelectChange(setLugarPoblado)}
-            disabled={!municipio}
-          >
-            <SelectTrigger><SelectValue placeholder="Lugar poblado" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {lugaresPoblados?.map((lp) => (
-                <SelectItem key={lp.code} value={lp.code}>{lp.name}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(area)} onValueChange={onSelectChange(setArea)}>
-            <SelectTrigger><SelectValue placeholder="Area" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.areas.map((a) => (
-                <SelectItem key={a} value={a}>{a}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Demograficos */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Demograficos</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(sexoJefe)} onValueChange={onSelectChange(setSexoJefe)}>
-            <SelectTrigger><SelectValue placeholder="Sexo jefe hogar" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              <SelectItem value="Femenino">Femenino</SelectItem>
-              <SelectItem value="Masculino">Masculino</SelectItem>
-            </SelectContent>
-          </Select>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-menores-5"
-              checked={tieneMenores5}
-              onCheckedChange={(v) => setTieneMenores5(!!v)}
-            />
-            <label htmlFor="tiene-menores-5" className="text-sm">Con menores &lt;5</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-adultos-mayores"
-              checked={tieneAdultosMayores}
-              onCheckedChange={(v) => setTieneAdultosMayores(!!v)}
-            />
-            <label htmlFor="tiene-adultos-mayores" className="text-sm">Con adultos mayores</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-embarazadas"
-              checked={tieneEmbarazadas}
-              onCheckedChange={(v) => setTieneEmbarazadas(!!v)}
-            />
-            <label htmlFor="tiene-embarazadas" className="text-sm">Con embarazadas</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-discapacidad"
-              checked={tieneDiscapacidad}
-              onCheckedChange={(v) => setTieneDiscapacidad(!!v)}
-            />
-            <label htmlFor="tiene-discapacidad" className="text-sm">Con discapacidad</label>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Pobreza */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Pobreza</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(ipmClasificacion)} onValueChange={onSelectChange(setIpmClasificacion)}>
-            <SelectTrigger><SelectValue placeholder="Clasificacion IPM" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.clasificaciones_ipm.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(pmtClasificacion)} onValueChange={onSelectChange(setPmtClasificacion)}>
-            <SelectTrigger><SelectValue placeholder="Clasificacion PMT" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.clasificaciones_pmt.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(nbiClasificacion)} onValueChange={onSelectChange(setNbiClasificacion)}>
-            <SelectTrigger><SelectValue placeholder="Clasificacion NBI" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.clasificaciones_nbi.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <div className="grid grid-cols-2 gap-2">
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="IPM min"
-              value={ipmMin}
-              onChange={(e) => setIpmMin(e.target.value)}
-            />
-            <Input
-              type="number"
-              step="0.01"
-              placeholder="IPM max"
-              value={ipmMax}
-              onChange={(e) => setIpmMax(e.target.value)}
-            />
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Inseguridad Alimentaria */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Inseguridad Alimentaria</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(nivelInseguridad)} onValueChange={onSelectChange(setNivelInseguridad)}>
-            <SelectTrigger><SelectValue placeholder="Nivel" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.niveles_inseguridad.map((n) => (
-                <SelectItem key={n} value={n}>{n}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Servicios basicos */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Servicios Basicos</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(fuenteAgua)} onValueChange={onSelectChange(setFuenteAgua)}>
-            <SelectTrigger><SelectValue placeholder="Fuente de agua" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.fuentes_agua.map((f) => (
-                <SelectItem key={f} value={f}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(tipoSanitario)} onValueChange={onSelectChange(setTipoSanitario)}>
-            <SelectTrigger><SelectValue placeholder="Tipo sanitario" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.tipos_sanitario.map((t) => (
-                <SelectItem key={t} value={t}>{t}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(alumbrado)} onValueChange={onSelectChange(setAlumbrado)}>
-            <SelectTrigger><SelectValue placeholder="Alumbrado" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.tipos_alumbrado.map((a) => (
-                <SelectItem key={a} value={a}>{a}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <Select value={selectValue(combustibleCocina)} onValueChange={onSelectChange(setCombustibleCocina)}>
-            <SelectTrigger><SelectValue placeholder="Combustible cocina" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
-              {catalogos?.combustibles_cocina.map((c) => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Bienes del hogar */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Bienes del Hogar</Label>
-        <div className="space-y-2 mt-1">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-internet"
-              checked={tieneInternet}
-              onCheckedChange={(v) => setTieneInternet(!!v)}
-            />
-            <label htmlFor="tiene-internet" className="text-sm">Con internet</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-computadora"
-              checked={tieneComputadora}
-              onCheckedChange={(v) => setTieneComputadora(!!v)}
-            />
-            <label htmlFor="tiene-computadora" className="text-sm">Con computadora</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="tiene-refrigerador"
-              checked={tieneRefrigerador}
-              onCheckedChange={(v) => setTieneRefrigerador(!!v)}
-            />
-            <label htmlFor="tiene-refrigerador" className="text-sm">Con refrigerador</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="con-hacinamiento"
-              checked={conHacinamiento}
-              onCheckedChange={(v) => setConHacinamiento(!!v)}
-            />
-            <label htmlFor="con-hacinamiento" className="text-sm">Con hacinamiento</label>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Educacion y empleo */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Educacion y Empleo</Label>
-        <div className="space-y-2 mt-1">
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="con-analfabetismo"
-              checked={conAnalfabetismo}
-              onCheckedChange={(v) => setConAnalfabetismo(!!v)}
-            />
-            <label htmlFor="con-analfabetismo" className="text-sm">Con analfabetismo</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="con-menores-sin-escuela"
-              checked={conMenoresSinEscuela}
-              onCheckedChange={(v) => setConMenoresSinEscuela(!!v)}
-            />
-            <label htmlFor="con-menores-sin-escuela" className="text-sm">Menores sin escuela</label>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Checkbox
-              id="sin-empleo"
-              checked={sinEmpleo}
-              onCheckedChange={(v) => setSinEmpleo(!!v)}
-            />
-            <label htmlFor="sin-empleo" className="text-sm">Sin empleo en hogar</label>
-          </div>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Fase */}
-      <div>
-        <Label className="text-xs font-semibold text-gray-500 uppercase">Fase</Label>
-        <div className="space-y-2 mt-1">
-          <Select value={selectValue(fase)} onValueChange={onSelectChange(setFase)}>
-            <SelectTrigger><SelectValue placeholder="Fase" /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
-              {catalogos?.fases.map((f) => (
-                <SelectItem key={f} value={f}>{f}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <Separator />
-
-      {/* Botones */}
-      <div className="flex gap-2">
-        <Button onClick={handleApply} className="flex-1">
+        <Button size="sm" onClick={handleApply}>
           Aplicar
         </Button>
-        <Button variant="outline" onClick={handleClear} className="flex-1">
-          <FilterX className="mr-1 h-4 w-4" />
-          Limpiar
-        </Button>
+        {activeCount > 0 && (
+          <Button variant="ghost" size="sm" onClick={handleClear}>
+            <FilterX className="mr-1 h-4 w-4" />
+            Limpiar
+          </Button>
+        )}
       </div>
+
+      {/* Expanded filters grid */}
+      {expanded && (
+        <div className="border-t px-3 pb-3 pt-2">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-3">
+
+            {/* Geograficos */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Geograficos</Label>
+              <Select value={selectValue(departamento)} onValueChange={onSelectChange(setDepartamento)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Departamento" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {catalogos?.departamentos.map((d) => (
+                    <SelectItem key={d.code} value={d.code}>{d.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(municipio)} onValueChange={onSelectChange(setMunicipio)} disabled={!departamento}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Municipio" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {municipios?.map((m) => (
+                    <SelectItem key={m.code} value={m.code}>{m.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(lugarPoblado)} onValueChange={onSelectChange(setLugarPoblado)} disabled={!municipio}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Lugar poblado" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {lugaresPoblados?.map((lp) => (
+                    <SelectItem key={lp.code} value={lp.code}>{lp.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(area)} onValueChange={onSelectChange(setArea)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Area" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.areas.map((a) => (
+                    <SelectItem key={a} value={a}>{a}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Pobreza */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Pobreza</Label>
+              <Select value={selectValue(ipmClasificacion)} onValueChange={onSelectChange(setIpmClasificacion)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Clasif. IPM" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.clasificaciones_ipm.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(pmtClasificacion)} onValueChange={onSelectChange(setPmtClasificacion)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Clasif. PMT" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.clasificaciones_pmt.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(nbiClasificacion)} onValueChange={onSelectChange(setNbiClasificacion)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Clasif. NBI" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.clasificaciones_nbi.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="grid grid-cols-2 gap-1.5">
+                <Input type="number" step="0.01" placeholder="IPM min" value={ipmMin} onChange={(e) => setIpmMin(e.target.value)} className="h-8 text-xs" />
+                <Input type="number" step="0.01" placeholder="IPM max" value={ipmMax} onChange={(e) => setIpmMax(e.target.value)} className="h-8 text-xs" />
+              </div>
+            </div>
+
+            {/* Demograficos */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Demograficos</Label>
+              <Select value={selectValue(sexoJefe)} onValueChange={onSelectChange(setSexoJefe)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sexo jefe" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  <SelectItem value="Femenino">Femenino</SelectItem>
+                  <SelectItem value="Masculino">Masculino</SelectItem>
+                </SelectContent>
+              </Select>
+              <div className="space-y-1">
+                <CheckItem id="menores5" checked={tieneMenores5} onChange={setTieneMenores5} label="Menores <5" />
+                <CheckItem id="adultos-may" checked={tieneAdultosMayores} onChange={setTieneAdultosMayores} label="Adultos mayores" />
+                <CheckItem id="embarazadas" checked={tieneEmbarazadas} onChange={setTieneEmbarazadas} label="Embarazadas" />
+                <CheckItem id="discapacidad" checked={tieneDiscapacidad} onChange={setTieneDiscapacidad} label="Discapacidad" />
+              </div>
+            </div>
+
+            {/* Inseguridad + Fase + Servicios */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Inseg. Alimentaria / Fase</Label>
+              <Select value={selectValue(nivelInseguridad)} onValueChange={onSelectChange(setNivelInseguridad)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Nivel inseguridad" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {catalogos?.niveles_inseguridad.map((n) => (
+                    <SelectItem key={n} value={n}>{n}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(fase)} onValueChange={onSelectChange(setFase)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Fase" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.fases.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider !mt-2 block">Servicios</Label>
+              <Select value={selectValue(fuenteAgua)} onValueChange={onSelectChange(setFuenteAgua)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Fuente agua" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todas</SelectItem>
+                  {catalogos?.fuentes_agua.map((f) => (
+                    <SelectItem key={f} value={f}>{f}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(tipoSanitario)} onValueChange={onSelectChange(setTipoSanitario)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sanitario" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {catalogos?.tipos_sanitario.map((t) => (
+                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Servicios cont. + Bienes + Educacion */}
+            <div className="space-y-1.5">
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Servicios / Bienes</Label>
+              <Select value={selectValue(alumbrado)} onValueChange={onSelectChange(setAlumbrado)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Alumbrado" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {catalogos?.tipos_alumbrado.map((a) => (
+                    <SelectItem key={a} value={a}>{a}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select value={selectValue(combustibleCocina)} onValueChange={onSelectChange(setCombustibleCocina)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Combustible" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={EMPTY_VALUE}>Todos</SelectItem>
+                  {catalogos?.combustibles_cocina.map((c) => (
+                    <SelectItem key={c} value={c}>{c}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <div className="space-y-1">
+                <CheckItem id="internet" checked={tieneInternet} onChange={setTieneInternet} label="Internet" />
+                <CheckItem id="computadora" checked={tieneComputadora} onChange={setTieneComputadora} label="Computadora" />
+                <CheckItem id="refrigerador" checked={tieneRefrigerador} onChange={setTieneRefrigerador} label="Refrigerador" />
+                <CheckItem id="hacinamiento" checked={conHacinamiento} onChange={setConHacinamiento} label="Hacinamiento" />
+                <CheckItem id="analfabetismo" checked={conAnalfabetismo} onChange={setConAnalfabetismo} label="Analfabetismo" />
+                <CheckItem id="menores-sin-esc" checked={conMenoresSinEscuela} onChange={setConMenoresSinEscuela} label="Menores sin escuela" />
+                <CheckItem id="sin-empleo" checked={sinEmpleo} onChange={setSinEmpleo} label="Sin empleo" />
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function CheckItem({ id, checked, onChange, label }: { id: string; checked: boolean; onChange: (v: boolean) => void; label: string }) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <Checkbox id={id} checked={checked} onCheckedChange={(v) => onChange(!!v)} className="h-3.5 w-3.5" />
+      <label htmlFor={id} className="text-xs text-gray-600 cursor-pointer">{label}</label>
     </div>
   )
 }
