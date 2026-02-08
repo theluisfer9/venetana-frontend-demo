@@ -10,6 +10,8 @@ import type {
   BeneficiarioStats,
   DashboardStats,
   BeneficiarioFilters,
+  PersonaResumen,
+  ViviendaDetalle,
 } from '@/lib/beneficiario-types'
 
 function buildQueryString(filters: BeneficiarioFilters, extra?: Record<string, string | number>): string {
@@ -104,6 +106,22 @@ export function useDashboardStats() {
     queryFn: () => apiClient.get<DashboardStats>('/beneficiarios/dashboard'),
     enabled: isAuthenticated(),
     staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function usePersonasHogar(hogarId: number | null) {
+  return useQuery({
+    queryKey: ['beneficiarios', 'personas', hogarId],
+    queryFn: () => apiClient.get<PersonaResumen[]>(`/beneficiarios/${hogarId}/personas`),
+    enabled: isAuthenticated() && hogarId !== null,
+  })
+}
+
+export function useViviendaHogar(hogarId: number | null) {
+  return useQuery({
+    queryKey: ['beneficiarios', 'vivienda', hogarId],
+    queryFn: () => apiClient.get<ViviendaDetalle>(`/beneficiarios/${hogarId}/vivienda`),
+    enabled: isAuthenticated() && hogarId !== null,
   })
 }
 

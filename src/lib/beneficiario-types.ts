@@ -106,6 +106,94 @@ export interface BeneficiarioDetalle extends BeneficiarioResumen {
   adultos: number | null
 }
 
+// ── Persona (miembro del hogar) ─────────────────────────────────────
+
+export interface PersonaResumen {
+  personas_id: number
+  correlativo: number
+  cui: number | null
+  nombre_completo: string
+  genero: string
+  fecha_nacimiento: string | null
+  edad: number
+  estado_civil: string
+  celular: number | null
+  parentesco: string
+  pueblo: string
+  comunidad_linguistica: string
+  idioma_materno: string
+  dificultad_ver: string
+  dificultad_oir: string
+  dificultad_caminar: string
+  dificultad_recordar: string
+  dificultad_cuidado_personal: string
+  dificultad_entender: string
+  embarazada: string
+  sabe_leer_escribir: string
+  inscrito_escuela: string
+  nivel_educativo: string
+  actividad_principal: string
+  tiene_ingreso: string
+}
+
+// ── Vivienda detalle ────────────────────────────────────────────────
+
+export interface ViviendaDetalle {
+  condicion_vivienda: string
+  tipo_vivienda: string
+  material_paredes: string
+  material_techo: string
+  material_piso: string
+  tenencia: string
+  propietario: string
+  personas_habituales: number
+  personas_hogar: number
+  hombres: number
+  mujeres: number
+  ninos: number
+  ninas: number
+  cuartos: number
+  dormitorios: number
+  cocina_exclusiva: string
+  combustible_cocina: string
+  usa_lenia: string
+  lugar_cocina: string
+  chimenea: string
+  fuente_agua: string
+  dias_sin_agua: number
+  tratamiento_agua: string
+  tipo_sanitario: string
+  uso_sanitario: string
+  aguas_grises: string
+  alumbrado: string
+  dias_sin_electricidad: number
+  eliminacion_basura: string
+  radio: string
+  estufa_lenia: string
+  estufa_gas: string
+  televisor: string
+  refrigerador: string
+  lavadora: string
+  computadora: string
+  internet: string
+  moto: string
+  carro: string
+  preocupacion_alimentos: string
+  sin_alimentos: string
+  adulto_sin_alimentacion_saludable: string
+  nino_sin_alimentacion_saludable: string
+  adulto_sin_variedad: string
+  nino_sin_variedad: string
+  adulto_sin_tiempo_comida: string
+  nino_sin_tiempo_comida: string
+  adulto_comio_menos: string
+  nino_comio_menos: string
+  adulto_sintio_hambre: string
+  nino_sintio_hambre: string
+  adulto_comio_una_vez: string
+  nino_comio_una_vez: string
+}
+
 // ── Paginacion ───────────────────────────────────────────────────────
 
 export interface PaginatedResponse {
