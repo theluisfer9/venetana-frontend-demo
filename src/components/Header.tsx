@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
-import { Home, LayoutDashboard, LogIn, LogOut, Menu, Users, X } from 'lucide-react'
+import { Building2, Home, LayoutDashboard, LogIn, LogOut, Menu, Users, X } from 'lucide-react'
 import { isAuthenticated, useLogout } from '@/hooks/use-auth'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -91,6 +91,16 @@ export default function Header() {
               >
                 <Users size={20} />
                 <span className="font-medium">Beneficiarios</span>
+              </Link>
+
+              <Link
+                to="/consulta"
+                onClick={() => setIsOpen(false)}
+                className={linkClass}
+                activeProps={{ className: activeLinkClass }}
+              >
+                <Building2 size={20} />
+                <span className="font-medium">Consulta Institucional</span>
               </Link>
 
               <div className="border-t border-gray-700 mt-4 pt-4">

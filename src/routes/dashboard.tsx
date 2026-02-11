@@ -2,7 +2,7 @@ import { createRoute, redirect, useNavigate, Link } from '@tanstack/react-router
 import { useCurrentUser, useLogout, isAuthenticated } from '@/hooks/use-auth'
 
 import { Button } from '@/components/ui/button'
-import { LogOut, Users } from 'lucide-react'
+import { Building2, LogOut, Users } from 'lucide-react'
 import DashboardWidgets from '@/components/DashboardWidgets'
 
 import type { AnyRoute } from '@tanstack/react-router'
@@ -53,6 +53,14 @@ function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            {user.institution_code && (
+              <Link to="/consulta">
+                <Button variant="outline">
+                  <Building2 className="mr-2 h-4 w-4" />
+                  Consulta Institucional
+                </Button>
+              </Link>
+            )}
             <Link to="/beneficiarios">
               <Button>
                 <Users className="mr-2 h-4 w-4" />
