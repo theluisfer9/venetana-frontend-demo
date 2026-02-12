@@ -1,9 +1,8 @@
 import { useState } from 'react'
-import { createRoute, redirect } from '@tanstack/react-router'
+import { createRoute, redirect, useNavigate, useSearch } from '@tanstack/react-router'
 import { isAuthenticated } from '@/hooks/use-auth'
 import {
   useInstitutionPreset,
-  useConsultaDashboard,
   useConsultaList,
   useConsultaDetail,
 } from '@/hooks/use-consulta'
@@ -16,17 +15,9 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
-import { ArrowLeft, X, Users, MapPin, Home, CheckCircle2, XCircle } from 'lucide-react'
+import { ArrowLeft, X, Users, Home, CheckCircle2, XCircle } from 'lucide-react'
 import type { ConsultaFilters, InstitutionPreset } from '@/lib/consulta-types'
 import type { AnyRoute } from '@tanstack/react-router'
-
-const GRID_COLS_MAP: Record<number, string> = {
-  2: 'grid-cols-2',
-  3: 'grid-cols-3',
-  4: 'grid-cols-4',
-  5: 'grid-cols-5',
-  6: 'grid-cols-6',
-}
 
 function ConsultaDetailPanel({
   id,
@@ -135,17 +126,24 @@ function ConsultaDetailPanel({
 }
 
 function ConsultaPage() {
+  const { intervencion } = useSearch({ strict: false }) as { intervencion?: string }
+  const navigate = useNavigate()
   const { data: preset, isLoading: presetLoading, error: presetError } = useInstitutionPreset()
-  const { data: dashboard, isLoading: dashboardLoading } = useConsultaDashboard()
-  const [filters, setFilters] = useState<ConsultaFilters>({})
+
+  const [geoFilters, setGeoFilters] = useState<ConsultaFilters>({})
   const [offset, setOffset] = useState(0)
   const [selectedId, setSelectedId] = useState<number | null>(null)
   const limit = 10
 
-  const { data, isLoading } = useConsultaList(filters, offset, limit)
+  const mergedFilters: ConsultaFilters = {
+    ...geoFilters,
+    ...(intervencion ? { [intervencion]: true } : {}),
+  }
+
+  const { data, isLoading } = useConsultaList(mergedFilters, offset, limit)
 
   function handleApplyFilters(newFilters: ConsultaFilters) {
-    setFilters(newFilters)
+    setGeoFilters(newFilters)
     setOffset(0)
     setSelectedId(null)
   }
@@ -173,85 +171,47 @@ function ConsultaPage() {
     )
   }
 
-  const intervGridCols = GRID_COLS_MAP[dashboard?.por_intervencion?.length ?? 4] || 'grid-cols-4'
+  const interventionLabel = intervencion
+    ? (preset.labels[intervencion] || intervencion)
+    : 'Todas las intervenciones'
 
   return (
     <div className="min-h-[calc(100vh-72px)] bg-gray-50 p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Consulta Institucional</h2>
-          <p className="text-sm text-gray-600 mt-1">{preset.name}</p>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate({ to: '/dashboard' })}
+          >
+            <ArrowLeft className="mr-1 h-4 w-4" />
+            Volver
+          </Button>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900">{interventionLabel}</h2>
+            <p className="text-sm text-gray-600">{preset.name}</p>
+          </div>
         </div>
 
-        {dashboard && !dashboardLoading && (
-          <>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Hogares</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <Home className="h-4 w-4 text-blue-600" />
-                    <p className="text-2xl font-bold">{dashboard.total_hogares.toLocaleString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Departamentos</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-green-600" />
-                    <p className="text-2xl font-bold">{dashboard.departamentos_cubiertos}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Municipios</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <MapPin className="h-4 w-4 text-purple-600" />
-                    <p className="text-2xl font-bold">{dashboard.municipios_cubiertos}</p>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-600">Total Personas</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-4 w-4 text-orange-600" />
-                    <p className="text-2xl font-bold">{dashboard.total_personas.toLocaleString()}</p>
-                  </div>
-                </CardContent>
-              </Card>
+        {data && (
+          <div className="flex items-center gap-6 text-sm text-gray-600">
+            <div className="flex items-center gap-1.5">
+              <Home className="h-4 w-4 text-blue-600" />
+              <span className="font-semibold">{data.total.toLocaleString()}</span> hogares
             </div>
-
-            {dashboard.por_intervencion && dashboard.por_intervencion.length > 0 && (
-              <div className={`grid ${intervGridCols} gap-2`}>
-                {dashboard.por_intervencion.map((item) => (
-                  <Card key={item.intervencion} className="p-3">
-                    <p className="text-xs font-medium text-gray-600 mb-1">{item.intervencion}</p>
-                    <p className="text-lg font-bold text-blue-600">{item.cantidad.toLocaleString()}</p>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </>
+            <div className="flex items-center gap-1.5">
+              <Users className="h-4 w-4 text-orange-600" />
+              <span className="font-semibold">
+                {data.items.reduce((sum, item) => sum + item.numero_personas, 0).toLocaleString()}
+              </span> personas (en pagina)
+            </div>
+          </div>
         )}
 
         <ConsultaFiltersPanel
           preset={preset}
           onApply={handleApplyFilters}
-          currentFilters={filters}
+          currentFilters={geoFilters}
         />
 
         {selectedId !== null ? (
@@ -291,6 +251,9 @@ export default (parentRoute: AnyRoute) =>
     path: '/consulta',
     component: ConsultaPage,
     getParentRoute: () => parentRoute,
+    validateSearch: (search: Record<string, unknown>) => ({
+      intervencion: (search.intervencion as string) || '',
+    }),
     beforeLoad: () => {
       if (!isAuthenticated()) {
         throw redirect({ to: '/login' })

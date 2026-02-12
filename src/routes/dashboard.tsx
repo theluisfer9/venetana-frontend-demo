@@ -1,11 +1,72 @@
 import { createRoute, redirect, useNavigate, Link } from '@tanstack/react-router'
 import { useCurrentUser, useLogout, isAuthenticated } from '@/hooks/use-auth'
+import { useInstitutionPreset, useConsultaDashboard } from '@/hooks/use-consulta'
 
 import { Button } from '@/components/ui/button'
-import { Building2, LogOut, Users } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Skeleton } from '@/components/ui/skeleton'
+import { LogOut, Users, ChevronRight } from 'lucide-react'
 import DashboardWidgets from '@/components/DashboardWidgets'
 
 import type { AnyRoute } from '@tanstack/react-router'
+
+function InstitutionCards() {
+  const navigate = useNavigate()
+  const { data: preset, isLoading: presetLoading } = useInstitutionPreset()
+  const { data: dashboard, isLoading: dashLoading } = useConsultaDashboard()
+
+  if (presetLoading || dashLoading) {
+    return (
+      <div className="space-y-3">
+        <h3 className="text-lg font-semibold">Consultas</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-lg" />
+          ))}
+        </div>
+      </div>
+    )
+  }
+
+  if (!preset || !dashboard) return null
+
+  const countMap = new Map(
+    (dashboard.por_intervencion ?? []).map((item) => [item.intervencion, item.cantidad])
+  )
+
+  return (
+    <div className="space-y-3">
+      <h3 className="text-lg font-semibold">{preset.name}</h3>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {preset.intervention_columns.map((col) => {
+          const label = preset.labels[col] || col
+          const count = countMap.get(label) ?? 0
+
+          return (
+            <Card
+              key={col}
+              className="cursor-pointer transition-shadow hover:shadow-md hover:border-blue-300"
+              onClick={() =>
+                navigate({ to: '/consulta', search: { intervencion: col } })
+              }
+            >
+              <CardContent className="flex items-center justify-between p-5">
+                <div>
+                  <p className="font-semibold text-gray-900">{label}</p>
+                  <p className="text-2xl font-bold text-blue-600 mt-1">
+                    {count.toLocaleString()}
+                  </p>
+                  <p className="text-xs text-gray-500">hogares</p>
+                </div>
+                <ChevronRight className="h-5 w-5 text-gray-400" />
+              </CardContent>
+            </Card>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
 
 function DashboardPage() {
   const { data: user, isLoading, isError } = useCurrentUser()
@@ -53,20 +114,14 @@ function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            {user.institution_code && (
-              <Link to="/consulta">
-                <Button variant="outline">
-                  <Building2 className="mr-2 h-4 w-4" />
-                  Consulta Institucional
+            {!user.institution_code && (
+              <Link to="/beneficiarios">
+                <Button>
+                  <Users className="mr-2 h-4 w-4" />
+                  Consultar Beneficiarios
                 </Button>
               </Link>
             )}
-            <Link to="/beneficiarios">
-              <Button>
-                <Users className="mr-2 h-4 w-4" />
-                Consultar Beneficiarios
-              </Button>
-            </Link>
             <Button
               variant="outline"
               onClick={handleLogout}
@@ -77,6 +132,9 @@ function DashboardPage() {
             </Button>
           </div>
         </div>
+
+        {/* Institutional intervention cards */}
+        {user.institution_code && <InstitutionCards />}
 
         {/* Dashboard widgets */}
         <DashboardWidgets />
