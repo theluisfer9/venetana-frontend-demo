@@ -13,6 +13,8 @@ import LoginRoute from './routes/login.tsx'
 import DashboardRoute from './routes/dashboard.tsx'
 import BeneficiariosRoute from './routes/beneficiarios.tsx'
 import ConsultaRoute from './routes/consulta.tsx'
+import QueriesRoute from './routes/queries.tsx'
+import QueryBuilderRoute from './routes/query-builder.tsx'
 
 import Header from './components/Header'
 
@@ -46,6 +48,8 @@ const routeTree = rootRoute.addChildren([
   DashboardRoute(rootRoute),
   BeneficiariosRoute(rootRoute),
   ConsultaRoute(rootRoute),
+  QueriesRoute(rootRoute),
+  QueryBuilderRoute(rootRoute),
 ])
 
 const TanStackQueryProviderContext = TanStackQueryProvider.getContext()

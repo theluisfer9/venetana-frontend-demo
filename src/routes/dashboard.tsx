@@ -5,7 +5,7 @@ import { useInstitutionPreset, useConsultaDashboard } from '@/hooks/use-consulta
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LogOut, Users, ChevronRight } from 'lucide-react'
+import { LogOut, Users, ChevronRight, Database, Plus } from 'lucide-react'
 import DashboardWidgets from '@/components/DashboardWidgets'
 
 import type { AnyRoute } from '@tanstack/react-router'
@@ -114,6 +114,18 @@ function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
+            <Link to="/queries">
+              <Button variant="outline">
+                <Database className="mr-2 h-4 w-4" />
+                Mis Consultas
+              </Button>
+            </Link>
+            <Link to="/queries/new">
+              <Button variant="outline">
+                <Plus className="mr-2 h-4 w-4" />
+                Nueva Consulta
+              </Button>
+            </Link>
             {!user.institution_code && (
               <Link to="/beneficiarios">
                 <Button>
