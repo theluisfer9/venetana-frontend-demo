@@ -7,7 +7,12 @@ import type {
   QueryExecuteResponse,
   SavedQueryListItem,
   SavedQueryDetail,
+  SavedQueryCreateBody,
+  SavedQueryUpdateBody,
+  Institution,
 } from '@/lib/query-builder-types'
+
+// ── Datasources ──
 
 export function useAvailableDataSources() {
   return useQuery({
@@ -18,12 +23,34 @@ export function useAvailableDataSources() {
   })
 }
 
+// ── Institutions ──
+
+export function useInstitutions() {
+  return useQuery({
+    queryKey: ['institutions'],
+    queryFn: () => apiClient.get<Institution[]>('/institutions/'),
+    enabled: isAuthenticated(),
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+// ── Execute ──
+
 export function useExecuteQuery() {
   return useMutation({
     mutationFn: (req: QueryExecuteRequest) =>
       apiClient.post<QueryExecuteResponse>('/queries/execute', req),
   })
 }
+
+export function useExecuteSavedQuery() {
+  return useMutation({
+    mutationFn: (id: string) =>
+      apiClient.post<QueryExecuteResponse>(`/queries/saved/${id}/execute`, {}),
+  })
+}
+
+// ── Saved queries CRUD ──
 
 export function useSavedQueries() {
   return useQuery({
@@ -44,14 +71,22 @@ export function useSavedQueryDetail(id: string | null) {
 export function useSaveQuery() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (body: {
-      datasource_id: string
-      name: string
-      selected_columns: string[]
-      filters: { column: string; op: string; value: unknown }[]
-    }) => apiClient.post('/queries/saved', body),
+    mutationFn: (body: SavedQueryCreateBody) =>
+      apiClient.post<SavedQueryDetail>('/queries/saved', body),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queries', 'saved'] })
+    },
+  })
+}
+
+export function useUpdateSavedQuery() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, ...body }: SavedQueryUpdateBody & { id: string }) =>
+      apiClient.put<SavedQueryDetail>(`/queries/saved/${id}`, body),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['queries', 'saved'] })
+      queryClient.invalidateQueries({ queryKey: ['queries', 'saved', variables.id] })
     },
   })
 }
@@ -63,12 +98,5 @@ export function useDeleteSavedQuery() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queries', 'saved'] })
     },
-  })
-}
-
-export function useExecuteSavedQuery() {
-  return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.post<QueryExecuteResponse>(`/queries/saved/${id}/execute`, {}),
   })
 }

@@ -23,6 +23,7 @@ import * as TanStackQueryProvider from './integrations/tanstack-query/root-provi
 import './styles.css'
 import reportWebVitals from './reportWebVitals.ts'
 
+import { Toaster } from 'sonner'
 import App from './App.tsx'
 
 const rootRoute = createRootRoute({
@@ -30,6 +31,7 @@ const rootRoute = createRootRoute({
     <>
       <Header />
       <Outlet />
+      <Toaster position="top-right" richColors closeButton />
       <TanStackRouterDevtools />
     </>
   ),
