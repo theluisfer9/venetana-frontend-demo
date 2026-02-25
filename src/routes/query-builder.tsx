@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { createRoute, redirect, useNavigate, useSearch } from '@tanstack/react-router'
-import { isAuthenticated } from '@/hooks/use-auth'
+import { isAuthenticated, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
 import {
   useAvailableDataSources,
   useExecuteQuery,
@@ -36,6 +36,8 @@ function QueryBuilderPage() {
     id?: string
     view?: boolean
   }
+  const { data: user } = useCurrentUser()
+  const isAdmin = isAdminRole(user?.role_code)
   const { data: dataSources, isLoading: dsLoading } = useAvailableDataSources()
   const { data: institutions } = useInstitutions()
   const { data: savedDetail, isLoading: detailLoading } = useSavedQueryDetail(editId ?? null)
@@ -59,7 +61,9 @@ function QueryBuilderPage() {
   const [showSave, setShowSave] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
-  const isEditing = !!editId && !viewOnly
+  // Admin can always edit, even if they arrive with view=true
+  const isEditing = !!editId && (isAdmin || !viewOnly)
+  const isViewOnly = !!editId && !isAdmin && !!viewOnly
   const limit = 20
   const currentDs = dataSources?.find((ds) => ds.id === datasourceId)
 
@@ -78,7 +82,7 @@ function QueryBuilderPage() {
   }, [savedDetail, dataSources, loaded])
 
   function handleDatasourceChange(id: string) {
-    if (viewOnly) return
+    if (isViewOnly) return
     setDatasourceId(id)
     setSelectedColumns([])
     setFilters([])
@@ -206,7 +210,7 @@ function QueryBuilderPage() {
               <ArrowLeft className="mr-1 h-4 w-4" /> Volver
             </Button>
             <h2 className="text-2xl font-bold text-gray-900">
-              {viewOnly ? 'Detalle Consulta' : isEditing ? 'Editar Consulta' : 'Nueva Consulta'}
+              {isViewOnly ? 'Detalle Consulta' : isEditing ? 'Editar Consulta' : 'Nueva Consulta'}
             </h2>
           </div>
           <div className="flex gap-2">
@@ -310,7 +314,7 @@ function QueryBuilderPage() {
         )}
 
         {/* ── View-only metadata ── */}
-        {viewOnly && savedDetail && (
+        {isViewOnly && savedDetail && (
           <Card>
             <CardContent className="p-4">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -340,7 +344,7 @@ function QueryBuilderPage() {
         )}
 
         {/* ── Save panel for NEW queries (toggle) ── */}
-        {!isEditing && !viewOnly && datasourceId && selectedColumns.length > 0 && (
+        {!isEditing && !isViewOnly && datasourceId && selectedColumns.length > 0 && (
           <>
             {!showSave ? (
               <Button variant="outline" size="sm" onClick={() => setShowSave(true)} className="gap-1">
@@ -434,7 +438,7 @@ function QueryBuilderPage() {
         )}
 
         {/* ── Datasource selector ── */}
-        {!viewOnly && (
+        {!isViewOnly && (
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-gray-600">Fuente de datos</CardTitle>
@@ -464,7 +468,7 @@ function QueryBuilderPage() {
                 <QueryColumnSelector
                   columns={currentDs.columns}
                   selected={selectedColumns}
-                  onChange={viewOnly ? () => {} : setSelectedColumns}
+                  onChange={isViewOnly ? () => {} : setSelectedColumns}
                 />
               </CardContent>
             </Card>
@@ -474,12 +478,12 @@ function QueryBuilderPage() {
                 <QueryFilterBuilder
                   columns={currentDs.columns}
                   filters={filters}
-                  onChange={viewOnly ? () => {} : setFilters}
+                  onChange={isViewOnly ? () => {} : setFilters}
                 />
               </CardContent>
             </Card>
 
-            {!viewOnly && (
+            {!isViewOnly && (
               <Button
                 onClick={() => handleExecute(0)}
                 disabled={selectedColumns.length === 0 || executeQuery.isPending}

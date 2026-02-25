@@ -6,6 +6,13 @@ export function isAuthenticated(): boolean {
   return getAccessToken() !== null
 }
 
+/** Check if user has an admin-level role (admin, superadmin, etc.) */
+export function isAdminRole(roleCode: string | undefined | null): boolean {
+  if (!roleCode) return false
+  const code = roleCode.toLowerCase()
+  return code === 'admin' || code === 'superadmin' || code === 'super_admin' || code.includes('admin')
+}
+
 export function useCurrentUser() {
   return useQuery({
     queryKey: ['auth', 'me'],

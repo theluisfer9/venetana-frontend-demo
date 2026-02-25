@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createRoute, redirect, Link } from '@tanstack/react-router'
-import { isAuthenticated, useCurrentUser } from '@/hooks/use-auth'
+import { isAuthenticated, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
 import { useSavedQueries, useDeleteSavedQuery, useExecuteSavedQuery } from '@/hooks/use-query-builder'
 import QueryResultsTable from '@/components/QueryResultsTable'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,7 @@ function QueriesPage() {
   const [executingId, setExecutingId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  const isAdmin = user?.role_code === 'admin'
+  const isAdmin = isAdminRole(user?.role_code)
 
   function handleExecute(id: string) {
     setExecutingId(id)
