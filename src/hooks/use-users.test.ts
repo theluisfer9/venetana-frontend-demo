@@ -298,6 +298,23 @@ describe('useActivateUser', () => {
     await waitFor(() => expect(result.current.isSuccess).toBe(true))
     expect(apiClient.put).toHaveBeenCalledWith('/users/user-5/activate', {})
   })
+
+  it('invalidates users query on success', async () => {
+    const { apiClient } = await import('@/lib/api')
+    vi.mocked(apiClient.put).mockResolvedValue(makeUser())
+    const invalidateSpy = vi.spyOn(queryClient, 'invalidateQueries')
+
+    const { result } = renderHook(() => useActivateUser(), {
+      wrapper: makeWrapper(queryClient),
+    })
+
+    await act(async () => {
+      result.current.mutate('user-1')
+    })
+
+    await waitFor(() => expect(result.current.isSuccess).toBe(true))
+    expect(invalidateSpy).toHaveBeenCalledWith({ queryKey: ['users'] })
+  })
 })
 
 describe('useRevokeUserSessions', () => {

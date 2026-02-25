@@ -169,4 +169,59 @@ describe('UserFormDialog — edit mode', () => {
       expect(payload.password).toBeUndefined()
     })
   })
+
+  it('includes is_active: false in payload after toggling the switch off', async () => {
+    const onSubmit = vi.fn()
+    const user = makeUser({ is_active: true })
+    renderDialog({ user, onSubmit })
+
+    const toggle = screen.getByRole('switch')
+    await userEvent.click(toggle)
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.is_active).toBe(false)
+    })
+  })
+
+  it('includes role_id in edit-mode submission payload', async () => {
+    const onSubmit = vi.fn()
+    const user = makeUser({ role: { id: 'role-1', code: 'admin', name: 'Admin' } })
+    renderDialog({ user, onSubmit })
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.role_id).toBe('role-1')
+    })
+  })
+
+  it('sends institution_id: null when user has no institution', async () => {
+    const onSubmit = vi.fn()
+    const user = makeUser({ institution: null })
+    renderDialog({ user, onSubmit })
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.institution_id).toBeNull()
+    })
+  })
+
+  it('sends phone: null when phone field is empty', async () => {
+    const onSubmit = vi.fn()
+    const user = makeUser({ phone: null })
+    renderDialog({ user, onSubmit })
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.phone).toBeNull()
+    })
+  })
 })

@@ -1,5 +1,6 @@
 {
   "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["**/*.test.ts", "**/*.test.tsx", "src/test-utils.tsx", "src/test-setup.ts"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

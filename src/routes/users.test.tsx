@@ -230,4 +230,150 @@ describe('UsersPage', () => {
     expect(screen.getByText('MIDES')).toBeDefined()
     expect(screen.getByText('—')).toBeDefined()
   })
+
+  it('clicking toggle button on active user calls deleteUser with user id', async () => {
+    // Use an id that is NOT 'current-user' so the toggle button is rendered
+    const user = makeUser({ id: 'other-user', is_active: true })
+    mockUseUsers.mockReturnValue({ data: makePaginatedResponse([user]), isLoading: false })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const row = screen.getByText(user.email).closest('tr')
+    const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+    // buttons[0] = edit (Pencil), buttons[1] = toggle (UserX/UserCheck)
+    expect(buttons.length).toBe(2)
+    await userEvent.click(buttons[1])
+
+    expect(mockDeleteUser).toHaveBeenCalledWith(
+      user.id,
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+    expect(mockActivateUser).not.toHaveBeenCalled()
+  })
+
+  it('clicking toggle button on inactive user calls activateUser with user id', async () => {
+    const user = makeUser({ id: 'other-user', is_active: false })
+    mockUseUsers.mockReturnValue({ data: makePaginatedResponse([user]), isLoading: false })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const row = screen.getByText(user.email).closest('tr')
+    const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+    expect(buttons.length).toBe(2)
+    await userEvent.click(buttons[1])
+
+    expect(mockActivateUser).toHaveBeenCalledWith(
+      user.id,
+      expect.objectContaining({ onSuccess: expect.any(Function) }),
+    )
+    expect(mockDeleteUser).not.toHaveBeenCalled()
+  })
+
+  it('toggle button is hidden for the current user', async () => {
+    // currentUser.id is 'current-user' per the mock at the top of this file
+    const user = makeUser({ id: 'current-user', is_active: true })
+    mockUseUsers.mockReturnValue({ data: makePaginatedResponse([user]), isLoading: false })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const row = screen.getByText(user.email).closest('tr')
+    const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+    // Only the edit button should be present; the toggle must be absent
+    expect(buttons.length).toBe(1)
+  })
+
+  // ── Search tests ─────────────────────────────────────────────────────────────
+
+  it('search button applies the search filter', async () => {
+    mockUseUsers.mockReturnValue({ data: makePaginatedResponse([]), isLoading: false })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre, email...')
+    fireEvent.change(searchInput, { target: { value: 'ana' } })
+
+    // The search button sits inside the same flex div as the input and contains
+    // only an SVG icon (no text). Locate it via the parent container.
+    const inputWrapper = searchInput.closest('div')!
+    const iconButton = inputWrapper.querySelector('button')!
+    fireEvent.click(iconButton)
+
+    const lastCall = mockUseUsers.mock.calls[mockUseUsers.mock.calls.length - 1]
+    expect(lastCall[2]).toMatchObject({ search: 'ana' })
+  })
+
+  it('pressing Enter in the search input applies the search filter', async () => {
+    mockUseUsers.mockReturnValue({ data: makePaginatedResponse([]), isLoading: false })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const searchInput = screen.getByPlaceholderText('Buscar por nombre, email...')
+    fireEvent.change(searchInput, { target: { value: 'bob' } })
+    fireEvent.keyDown(searchInput, { key: 'Enter' })
+
+    const lastCall = mockUseUsers.mock.calls[mockUseUsers.mock.calls.length - 1]
+    expect(lastCall[2]).toMatchObject({ search: 'bob' })
+  })
+
+  // ── Pagination tests ──────────────────────────────────────────────────────────
+
+  it('shows pagination info and buttons when there are multiple pages', async () => {
+    mockUseUsers.mockReturnValue({
+      data: makePaginatedResponse([], { pages: 3, total: 45, page: 1, size: 15 }),
+      isLoading: false,
+    })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    expect(screen.getByText('Página 1 de 3 (45 usuarios)')).toBeDefined()
+    expect(screen.getByRole('button', { name: /anterior/i })).toBeDefined()
+    expect(screen.getByRole('button', { name: /siguiente/i })).toBeDefined()
+  })
+
+  it('"Anterior" button is disabled on the first page', async () => {
+    mockUseUsers.mockReturnValue({
+      data: makePaginatedResponse([], { pages: 3, total: 45, page: 1, size: 15 }),
+      isLoading: false,
+    })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    const anteriorBtn = screen.getByRole('button', { name: /anterior/i })
+    expect(anteriorBtn.hasAttribute('disabled')).toBe(true)
+  })
+
+  it('clicking "Siguiente" increments the page passed to useUsers', async () => {
+    mockUseUsers.mockReturnValue({
+      data: makePaginatedResponse([], { pages: 3, total: 45, page: 1, size: 15 }),
+      isLoading: false,
+    })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    fireEvent.click(screen.getByRole('button', { name: /siguiente/i }))
+
+    const lastCall = mockUseUsers.mock.calls[mockUseUsers.mock.calls.length - 1]
+    expect(lastCall[0]).toBe(2)
+  })
+
+  it('pagination controls are not rendered when there is only one page', async () => {
+    mockUseUsers.mockReturnValue({
+      data: makePaginatedResponse([], { pages: 1, total: 5, page: 1, size: 15 }),
+      isLoading: false,
+    })
+
+    const UsersPage = await importUsersPage()
+    renderWithQuery(<UsersPage />)
+
+    expect(screen.queryByRole('button', { name: /anterior/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: /siguiente/i })).toBeNull()
+  })
 })

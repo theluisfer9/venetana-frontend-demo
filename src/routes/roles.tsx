@@ -22,6 +22,16 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Plus, Pencil, Shield, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Role } from '@/lib/admin-types'
@@ -39,6 +49,8 @@ function RolesPage() {
   const [permsOpen, setPermsOpen] = useState(false)
   const [editingRole, setEditingRole] = useState<Role | null>(null)
   const [permsRole, setPermsRole] = useState<Role | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deletingRole, setDeletingRole] = useState<Role | null>(null)
 
   function handleOpenCreate() {
     setEditingRole(null)
@@ -93,11 +105,18 @@ function RolesPage() {
   }
 
   function handleDelete(role: Role) {
-    if (!confirm(`¿Eliminar el rol "${role.name}"?`)) return
-    deleteRole.mutate(role.id, {
+    setDeletingRole(role)
+    setDeleteConfirmOpen(true)
+  }
+
+  function confirmDelete() {
+    if (!deletingRole) return
+    deleteRole.mutate(deletingRole.id, {
       onSuccess: () => toast.success('Rol eliminado'),
       onError: () => toast.error('Error al eliminar rol'),
     })
+    setDeleteConfirmOpen(false)
+    setDeletingRole(null)
   }
 
   return (
@@ -195,6 +214,21 @@ function RolesPage() {
           onSubmit={handlePermsSubmit}
           isPending={updatePerms.isPending}
         />
+
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Eliminar rol?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se eliminará el rol &ldquo;{deletingRole?.name}&rdquo;. Esta acción no se puede deshacer.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Eliminar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

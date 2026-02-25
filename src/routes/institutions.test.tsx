@@ -201,4 +201,54 @@ describe('InstitutionsPage', () => {
     expect(screen.getByText('Descripcion aqui')).toBeDefined()
     expect(screen.getByText('—')).toBeDefined()
   })
+
+  describe('delete institution', () => {
+    it('confirm accepted - calls deleteInstitution with institution id', async () => {
+      const inst = makeInstitution({ id: 'inst-del', name: 'Borrable Inst', is_active: true })
+      mockUseInstitutions.mockReturnValue({ data: [inst], isLoading: false })
+
+      const InstitutionsPage = await importInstitutionsPage()
+      renderWithQuery(<InstitutionsPage />)
+
+      const row = screen.getByText('Borrable Inst').closest('tr')
+      const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+      expect(buttons.length).toBe(2)
+      await userEvent.click(buttons[1])
+
+      // AlertDialog should appear with institution name in description
+      await waitFor(() => {
+        expect(screen.getByText('¿Desactivar institución?')).toBeDefined()
+      })
+
+      // Click "Desactivar" in the AlertDialog
+      await userEvent.click(screen.getByRole('button', { name: /^desactivar$/i }))
+
+      expect(mockDeleteInstitution).toHaveBeenCalledWith(
+        inst.id,
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      )
+    })
+
+    it('confirm cancelled - does NOT call deleteInstitution', async () => {
+      const inst = makeInstitution({ id: 'inst-cancel', name: 'NoDelete Inst', is_active: true })
+      mockUseInstitutions.mockReturnValue({ data: [inst], isLoading: false })
+
+      const InstitutionsPage = await importInstitutionsPage()
+      renderWithQuery(<InstitutionsPage />)
+
+      const row = screen.getByText('NoDelete Inst').closest('tr')
+      const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+      await userEvent.click(buttons[1])
+
+      // AlertDialog should appear
+      await waitFor(() => {
+        expect(screen.getByText('¿Desactivar institución?')).toBeDefined()
+      })
+
+      // Click "Cancelar" in the AlertDialog
+      await userEvent.click(screen.getByRole('button', { name: /cancelar/i }))
+
+      expect(mockDeleteInstitution).not.toHaveBeenCalled()
+    })
+  })
 })

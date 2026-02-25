@@ -146,4 +146,20 @@ describe('InstitutionFormDialog — edit mode', () => {
       expect(payload.is_active).toBe(true)
     })
   })
+
+  it('sends is_active: false after toggling the active switch off', async () => {
+    const onSubmit = vi.fn()
+    const inst = makeInstitution({ is_active: true })
+    renderDialog({ institution: inst, onSubmit })
+
+    const toggle = screen.getByRole('switch')
+    await userEvent.click(toggle)
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.is_active).toBe(false)
+    })
+  })
 })

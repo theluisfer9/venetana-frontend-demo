@@ -159,4 +159,25 @@ describe('RoleFormDialog — edit mode (system role)', () => {
       expect(payload.name).toBeUndefined()
     })
   })
+
+  it('includes description in system-role payload', async () => {
+    const onSubmit = vi.fn()
+    const role = makeRole({ is_system: true, description: 'Old desc' })
+    renderDialog({ role, onSubmit })
+
+    // code and name inputs are disabled; description textarea is the only enabled textbox
+    const textboxes = screen.getAllByRole('textbox')
+    const descriptionTextarea = textboxes.find((el) => !el.hasAttribute('disabled'))!
+    await userEvent.clear(descriptionTextarea)
+    await userEvent.type(descriptionTextarea, 'Updated desc')
+
+    fireEvent.click(screen.getByRole('button', { name: /guardar/i }))
+
+    await waitFor(() => {
+      const payload = onSubmit.mock.calls[0][0]
+      expect(payload.description).toBe('Updated desc')
+      expect(payload.code).toBeUndefined()
+      expect(payload.name).toBeUndefined()
+    })
+  })
 })

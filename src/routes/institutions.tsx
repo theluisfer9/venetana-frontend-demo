@@ -19,6 +19,16 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Skeleton } from '@/components/ui/skeleton'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Institution } from '@/lib/admin-types'
@@ -32,6 +42,8 @@ function InstitutionsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [editing, setEditing] = useState<Institution | null>(null)
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [deletingInst, setDeletingInst] = useState<Institution | null>(null)
 
   function handleOpenCreate() {
     setEditing(null)
@@ -68,11 +80,18 @@ function InstitutionsPage() {
   }
 
   function handleDelete(inst: Institution) {
-    if (!confirm(`¿Desactivar la institución "${inst.name}"?`)) return
-    deleteInst.mutate(inst.id, {
+    setDeletingInst(inst)
+    setDeleteConfirmOpen(true)
+  }
+
+  function confirmDelete() {
+    if (!deletingInst) return
+    deleteInst.mutate(deletingInst.id, {
       onSuccess: () => toast.success('Institución desactivada'),
       onError: () => toast.error('Error al desactivar institución'),
     })
+    setDeleteConfirmOpen(false)
+    setDeletingInst(null)
   }
 
   return (
@@ -150,6 +169,21 @@ function InstitutionsPage() {
           onSubmit={handleSubmit}
           isPending={createInst.isPending || updateInst.isPending}
         />
+
+        <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>¿Desactivar institución?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Se desactivará la institución &ldquo;{deletingInst?.name}&rdquo;. Podrá reactivarla luego.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDelete}>Desactivar</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   )

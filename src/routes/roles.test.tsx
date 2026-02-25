@@ -208,4 +208,54 @@ describe('RolesPage', () => {
     const rows = screen.getAllByRole('row')
     expect(rows.length).toBeGreaterThan(1)
   })
+
+  describe('delete role', () => {
+    it('confirm accepted - calls deleteRole with role id', async () => {
+      const role = makeRole({ id: 'r-del', name: 'Borrable', is_system: false })
+      mockUseRoles.mockReturnValue({ data: [role], isLoading: false })
+
+      const RolesPage = await importRolesPage()
+      renderWithQuery(<RolesPage />)
+
+      const row = screen.getByText('Borrable').closest('tr')
+      const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+      expect(buttons.length).toBe(3)
+      await userEvent.click(buttons[2])
+
+      // AlertDialog should appear with role name in description
+      await waitFor(() => {
+        expect(screen.getByText('¿Eliminar rol?')).toBeDefined()
+      })
+
+      // Click "Eliminar" in the AlertDialog
+      await userEvent.click(screen.getByRole('button', { name: /^eliminar$/i }))
+
+      expect(mockDeleteRole).toHaveBeenCalledWith(
+        role.id,
+        expect.objectContaining({ onSuccess: expect.any(Function) }),
+      )
+    })
+
+    it('confirm cancelled - does NOT call deleteRole', async () => {
+      const role = makeRole({ id: 'r-cancel', name: 'NoDelete', is_system: false })
+      mockUseRoles.mockReturnValue({ data: [role], isLoading: false })
+
+      const RolesPage = await importRolesPage()
+      renderWithQuery(<RolesPage />)
+
+      const row = screen.getByText('NoDelete').closest('tr')
+      const buttons = row ? Array.from(row.querySelectorAll('button')) : []
+      await userEvent.click(buttons[2])
+
+      // AlertDialog should appear
+      await waitFor(() => {
+        expect(screen.getByText('¿Eliminar rol?')).toBeDefined()
+      })
+
+      // Click "Cancelar" in the AlertDialog
+      await userEvent.click(screen.getByRole('button', { name: /cancelar/i }))
+
+      expect(mockDeleteRole).not.toHaveBeenCalled()
+    })
+  })
 })
