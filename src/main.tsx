@@ -18,6 +18,7 @@ import QueryBuilderRoute from './routes/query-builder.tsx'
 import UsersRoute from './routes/users.tsx'
 import RolesRoute from './routes/roles.tsx'
 import InstitutionsRoute from './routes/institutions.tsx'
+import DataSourcesRoute from './routes/datasources.tsx'
 
 import Header from './components/Header'
 
@@ -58,6 +59,7 @@ const routeTree = rootRoute.addChildren([
   UsersRoute(rootRoute),
   RolesRoute(rootRoute),
   InstitutionsRoute(rootRoute),
+  DataSourcesRoute(rootRoute),
 ])
 
 const TanStackQueryProviderContext = TanStackQueryProvider.getContext()
