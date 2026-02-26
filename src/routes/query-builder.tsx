@@ -12,6 +12,8 @@ import {
 } from '@/hooks/use-query-builder'
 import QueryColumnSelector from '@/components/QueryColumnSelector'
 import QueryFilterBuilder from '@/components/QueryFilterBuilder'
+import QueryGroupBySelector from '@/components/QueryGroupBySelector'
+import QueryAggregationSelector from '@/components/QueryAggregationSelector'
 import QueryResultsTable from '@/components/QueryResultsTable'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,7 +29,7 @@ import {
 } from '@/components/ui/select'
 import { ArrowLeft, Play, Save, Loader2, Pencil } from 'lucide-react'
 import { toast } from 'sonner'
-import type { QueryFilter, QueryExecuteResponse } from '@/lib/query-builder-types'
+import type { QueryFilter, QueryExecuteResponse, Aggregation } from '@/lib/query-builder-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function QueryBuilderPage() {
@@ -50,6 +52,8 @@ function QueryBuilderPage() {
   const [datasourceId, setDatasourceId] = useState('')
   const [selectedColumns, setSelectedColumns] = useState<string[]>([])
   const [filters, setFilters] = useState<QueryFilter[]>([])
+  const [groupBy, setGroupBy] = useState<string[]>([])
+  const [aggregations, setAggregations] = useState<Aggregation[]>([])
   const [offset, setOffset] = useState(0)
   const [results, setResults] = useState<QueryExecuteResponse | undefined>()
 
@@ -73,6 +77,8 @@ function QueryBuilderPage() {
       setDatasourceId(savedDetail.datasource_id)
       setSelectedColumns(savedDetail.selected_columns)
       setFilters(savedDetail.filters)
+      setGroupBy(savedDetail.group_by || [])
+      setAggregations(savedDetail.aggregations || [])
       setQueryName(savedDetail.name)
       setQueryDescription(savedDetail.description ?? '')
       setInstitutionId(savedDetail.institution_id ?? '')
@@ -86,6 +92,8 @@ function QueryBuilderPage() {
     setDatasourceId(id)
     setSelectedColumns([])
     setFilters([])
+    setGroupBy([])
+    setAggregations([])
     setResults(undefined)
     setOffset(0)
   }
@@ -109,6 +117,8 @@ function QueryBuilderPage() {
         datasource_id: datasourceId,
         columns: selectedColumns,
         filters: coercedFilters as QueryFilter[],
+        group_by: groupBy.length > 0 ? groupBy : undefined,
+        aggregations: aggregations.length > 0 ? aggregations : undefined,
         offset: newOffset,
         limit,
       },
@@ -148,6 +158,8 @@ function QueryBuilderPage() {
         description: queryDescription.trim() || null,
         selected_columns: selectedColumns,
         filters: filterPayload,
+        group_by: groupBy,
+        aggregations: aggregations.map((a) => ({ column: a.column, function: a.function })),
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -173,6 +185,8 @@ function QueryBuilderPage() {
         description: queryDescription.trim() || null,
         selected_columns: selectedColumns,
         filters: filterPayload,
+        group_by: groupBy,
+        aggregations: aggregations.map((a) => ({ column: a.column, function: a.function })),
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -482,6 +496,30 @@ function QueryBuilderPage() {
                 />
               </CardContent>
             </Card>
+
+            {/* ── Group By ── */}
+            <Card>
+              <CardContent className="p-4">
+                <QueryGroupBySelector
+                  columns={currentDs.columns}
+                  selected={groupBy}
+                  onChange={isViewOnly ? () => {} : setGroupBy}
+                />
+              </CardContent>
+            </Card>
+
+            {/* ── Aggregations (only when groupBy active) ── */}
+            {groupBy.length > 0 && (
+              <Card>
+                <CardContent className="p-4">
+                  <QueryAggregationSelector
+                    columns={currentDs.columns}
+                    aggregations={aggregations}
+                    onChange={isViewOnly ? () => {} : setAggregations}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {!isViewOnly && (
               <Button

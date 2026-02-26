@@ -5,6 +5,7 @@ export interface DataSourceColumn {
   category: string
   is_selectable: boolean
   is_filterable: boolean
+  is_groupable: boolean
 }
 
 export interface AvailableDataSource {
@@ -20,10 +21,17 @@ export interface QueryFilter {
   value: string | number | boolean | string[]
 }
 
+export interface Aggregation {
+  column: string
+  function: 'COUNT' | 'SUM'
+}
+
 export interface QueryExecuteRequest {
   datasource_id: string
   columns: string[]
   filters: QueryFilter[]
+  group_by?: string[]
+  aggregations?: Aggregation[]
   offset: number
   limit: number
 }
@@ -49,6 +57,7 @@ export interface SavedQueryListItem {
   datasource_name: string
   column_count: number
   filter_count: number
+  has_aggregations: boolean
   is_shared: boolean
   institution_id: string | null
   institution_name: string | null
@@ -63,6 +72,8 @@ export interface SavedQueryDetail {
   datasource_name: string
   selected_columns: string[]
   filters: QueryFilter[]
+  group_by: string[]
+  aggregations: Aggregation[]
   is_shared: boolean
   institution_id: string | null
   institution_name: string | null
@@ -75,6 +86,8 @@ export interface SavedQueryCreateBody {
   description?: string | null
   selected_columns: string[]
   filters: { column: string; op: string; value: unknown }[]
+  group_by?: string[]
+  aggregations?: { column: string; function: string }[]
   institution_id?: string | null
   is_shared?: boolean
 }
@@ -84,6 +97,8 @@ export interface SavedQueryUpdateBody {
   description?: string | null
   selected_columns?: string[]
   filters?: { column: string; op: string; value: unknown }[]
+  group_by?: string[]
+  aggregations?: { column: string; function: string }[]
   institution_id?: string | null
   is_shared?: boolean
 }
