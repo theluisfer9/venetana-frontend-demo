@@ -67,3 +67,46 @@ export function useUpdateRolePermissions() {
     },
   })
 }
+
+export interface DataSourceListItem {
+  id: string
+  code: string
+  name: string
+  is_active: boolean
+  column_count: number
+}
+
+export function useAllDataSources() {
+  return useQuery({
+    queryKey: ['datasources-admin'],
+    queryFn: () => apiClient.get<DataSourceListItem[]>('/datasources/'),
+    enabled: isAuthenticated(),
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
+export interface RoleDataSource {
+  id: string
+  code: string
+  name: string
+  description: string | null
+}
+
+export function useRoleDataSources(roleId: string | null) {
+  return useQuery({
+    queryKey: ['role-datasources', roleId],
+    queryFn: () => apiClient.get<RoleDataSource[]>(`/roles/${roleId}/datasources`),
+    enabled: !!roleId && isAuthenticated(),
+  })
+}
+
+export function useUpdateRoleDataSources() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, datasource_ids }: { id: string; datasource_ids: string[] }) =>
+      apiClient.put(`/roles/${id}/datasources`, { datasource_ids }),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['role-datasources', variables.id] })
+    },
+  })
+}
