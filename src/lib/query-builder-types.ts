@@ -87,7 +87,7 @@ export interface SavedQueryCreateBody {
   selected_columns: string[]
   filters: { column: string; op: string; value: unknown }[]
   group_by?: string[]
-  aggregations?: { column: string; function: string }[]
+  aggregations?: Aggregation[]
   institution_id?: string | null
   is_shared?: boolean
 }
@@ -98,7 +98,7 @@ export interface SavedQueryUpdateBody {
   selected_columns?: string[]
   filters?: { column: string; op: string; value: unknown }[]
   group_by?: string[]
-  aggregations?: { column: string; function: string }[]
+  aggregations?: Aggregation[]
   institution_id?: string | null
   is_shared?: boolean
 }

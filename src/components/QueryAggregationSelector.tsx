@@ -1,3 +1,4 @@
+import { Checkbox } from '@/components/ui/checkbox'
 import { Label } from '@/components/ui/label'
 import {
   Select,
@@ -22,9 +23,6 @@ const AGG_FUNCTIONS = [
 export default function QueryAggregationSelector({ columns, aggregations, onChange }: Props) {
   const measures = columns.filter((c) => c.category === 'MEASURE')
 
-  // COUNT(*) is always the first aggregation, auto-managed
-  const hasCountStar = aggregations.some((a) => a.column === '*' && a.function === 'COUNT')
-
   function toggleMeasure(colName: string, func: string) {
     const exists = aggregations.find((a) => a.column === colName)
     if (exists) {
@@ -42,12 +40,6 @@ export default function QueryAggregationSelector({ columns, aggregations, onChan
     )
   }
 
-  // Ensure COUNT(*) is always present when this component renders
-  if (!hasCountStar) {
-    onChange([{ column: '*', function: 'COUNT' }, ...aggregations])
-    return null
-  }
-
   return (
     <div className="space-y-2">
       <Label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
@@ -60,13 +52,18 @@ export default function QueryAggregationSelector({ columns, aggregations, onChan
             const current = aggregations.find((a) => a.column === col.column_name)
             return (
               <div key={col.column_name} className="flex items-center gap-2">
-                <input
-                  type="checkbox"
+                <Checkbox
+                  id={`agg-${col.column_name}`}
                   checked={!!current}
-                  onChange={() => toggleMeasure(col.column_name, 'SUM')}
-                  className="h-3.5 w-3.5 rounded border-gray-300"
+                  onCheckedChange={() => toggleMeasure(col.column_name, 'SUM')}
+                  className="h-3.5 w-3.5"
                 />
-                <span className="text-xs text-gray-700 w-40">{col.label}</span>
+                <label
+                  htmlFor={`agg-${col.column_name}`}
+                  className="text-xs text-gray-700 w-40 cursor-pointer"
+                >
+                  {col.label}
+                </label>
                 {current && (
                   <Select
                     value={current.function}

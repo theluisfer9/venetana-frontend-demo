@@ -87,6 +87,18 @@ function QueryBuilderPage() {
     }
   }, [savedDetail, dataSources, loaded])
 
+  // Auto-manage aggregations: inject COUNT(*) when groupBy activates, clear when empty
+  useEffect(() => {
+    if (groupBy.length > 0) {
+      const hasCount = aggregations.some((a) => a.column === '*' && a.function === 'COUNT')
+      if (!hasCount) {
+        setAggregations((prev) => [{ column: '*', function: 'COUNT' }, ...prev])
+      }
+    } else {
+      setAggregations([])
+    }
+  }, [groupBy.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function handleDatasourceChange(id: string) {
     if (isViewOnly) return
     setDatasourceId(id)
@@ -158,8 +170,8 @@ function QueryBuilderPage() {
         description: queryDescription.trim() || null,
         selected_columns: selectedColumns,
         filters: filterPayload,
-        group_by: groupBy,
-        aggregations: aggregations.map((a) => ({ column: a.column, function: a.function })),
+        group_by: groupBy.length > 0 ? groupBy : [],
+        aggregations: groupBy.length > 0 ? aggregations.map((a) => ({ column: a.column, function: a.function })) : [],
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -185,8 +197,8 @@ function QueryBuilderPage() {
         description: queryDescription.trim() || null,
         selected_columns: selectedColumns,
         filters: filterPayload,
-        group_by: groupBy,
-        aggregations: aggregations.map((a) => ({ column: a.column, function: a.function })),
+        group_by: groupBy.length > 0 ? groupBy : [],
+        aggregations: groupBy.length > 0 ? aggregations.map((a) => ({ column: a.column, function: a.function })) : [],
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -498,15 +510,17 @@ function QueryBuilderPage() {
             </Card>
 
             {/* ── Group By ── */}
-            <Card>
-              <CardContent className="p-4">
-                <QueryGroupBySelector
-                  columns={currentDs.columns}
-                  selected={groupBy}
-                  onChange={isViewOnly ? () => {} : setGroupBy}
-                />
-              </CardContent>
-            </Card>
+            {currentDs.columns.some((c) => c.is_groupable) && (
+              <Card>
+                <CardContent className="p-4">
+                  <QueryGroupBySelector
+                    columns={currentDs.columns}
+                    selected={groupBy}
+                    onChange={isViewOnly ? () => {} : setGroupBy}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             {/* ── Aggregations (only when groupBy active) ── */}
             {groupBy.length > 0 && (
