@@ -90,14 +90,17 @@ function QueryBuilderPage() {
   // Auto-manage aggregations: inject COUNT(*) when groupBy activates, clear when empty
   useEffect(() => {
     if (groupBy.length > 0) {
-      const hasCount = aggregations.some((a) => a.column === '*' && a.function === 'COUNT')
-      if (!hasCount) {
-        setAggregations((prev) => [{ column: '*', function: 'COUNT' }, ...prev])
-      }
+      setAggregations((prev) => {
+        const hasCount = prev.some((a) => a.column === '*' && a.function === 'COUNT')
+        if (!hasCount) {
+          return [{ column: '*', function: 'COUNT' }, ...prev]
+        }
+        return prev
+      })
     } else {
       setAggregations([])
     }
-  }, [groupBy.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [groupBy.length])
 
   function handleDatasourceChange(id: string) {
     if (isViewOnly) return
