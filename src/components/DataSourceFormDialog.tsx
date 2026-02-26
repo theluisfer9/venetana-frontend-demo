@@ -57,7 +57,7 @@ export default function DataSourceFormDialog({
   const [description, setDescription] = useState('')
   const [selectedTable, setSelectedTable] = useState<string>('')
   const [baseFilterColumns, setBaseFilterColumns] = useState<string[]>([])
-  const [baseFilterLogic, setBaseFilterLogic] = useState<'AND' | 'OR'>('AND')
+  const [baseFilterLogic, setBaseFilterLogic] = useState<'AND' | 'OR'>('OR')
   const [institutionId, setInstitutionId] = useState<string>('none')
 
   // Fetch full datasource when editing
@@ -97,7 +97,7 @@ export default function DataSourceFormDialog({
       setDescription('')
       setSelectedTable('')
       setBaseFilterColumns([])
-      setBaseFilterLogic('AND')
+      setBaseFilterLogic('OR')
       setInstitutionId('none')
     }
   }, [open, isEdit, fullDatasource])
