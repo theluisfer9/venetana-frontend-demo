@@ -8,9 +8,13 @@ import {
   useUpdateRole,
   useDeleteRole,
   useUpdateRolePermissions,
+  useAllDataSources,
+  useRoleDataSources,
+  useUpdateRoleDataSources,
 } from '@/hooks/use-roles'
 import RoleFormDialog from '@/components/RoleFormDialog'
 import RolePermissionsDialog from '@/components/RolePermissionsDialog'
+import RoleDataSourcesDialog from '@/components/RoleDataSourcesDialog'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -32,7 +36,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { Plus, Pencil, Shield, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Shield, Database, Trash2 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { Role } from '@/lib/admin-types'
 import type { AnyRoute } from '@tanstack/react-router'
@@ -44,6 +48,11 @@ function RolesPage() {
   const updateRole = useUpdateRole()
   const deleteRole = useDeleteRole()
   const updatePerms = useUpdateRolePermissions()
+  const { data: allDataSources } = useAllDataSources()
+  const [dsRole, setDsRole] = useState<Role | null>(null)
+  const [dsOpen, setDsOpen] = useState(false)
+  const { data: roleDataSources } = useRoleDataSources(dsRole?.id ?? null)
+  const updateDs = useUpdateRoleDataSources()
 
   const [formOpen, setFormOpen] = useState(false)
   const [permsOpen, setPermsOpen] = useState(false)
@@ -65,6 +74,24 @@ function RolesPage() {
   function handleOpenPerms(role: Role) {
     setPermsRole(role)
     setPermsOpen(true)
+  }
+
+  function handleOpenDataSources(role: Role) {
+    setDsRole(role)
+    setDsOpen(true)
+  }
+
+  function handleDsSubmit(roleId: string, datasourceIds: string[]) {
+    updateDs.mutate(
+      { id: roleId, datasource_ids: datasourceIds },
+      {
+        onSuccess: () => {
+          toast.success('Fuentes de datos actualizadas')
+          setDsOpen(false)
+        },
+        onError: () => toast.error('Error al actualizar fuentes de datos'),
+      },
+    )
   }
 
   function handleFormSubmit(data: Record<string, unknown>) {
@@ -184,6 +211,9 @@ function RolesPage() {
                         <Button variant="ghost" size="sm" onClick={() => handleOpenPerms(role)}>
                           <Shield className="h-3.5 w-3.5" />
                         </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleOpenDataSources(role)}>
+                          <Database className="h-3.5 w-3.5" />
+                        </Button>
                         {!role.is_system && (
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(role)}>
                             <Trash2 className="h-3.5 w-3.5 text-red-500" />
@@ -213,6 +243,16 @@ function RolesPage() {
           permissions={permissions ?? []}
           onSubmit={handlePermsSubmit}
           isPending={updatePerms.isPending}
+        />
+
+        <RoleDataSourcesDialog
+          open={dsOpen}
+          onOpenChange={setDsOpen}
+          role={dsRole}
+          allDataSources={allDataSources ?? []}
+          assignedDataSources={roleDataSources ?? []}
+          onSubmit={handleDsSubmit}
+          isPending={updateDs.isPending}
         />
 
         <AlertDialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
