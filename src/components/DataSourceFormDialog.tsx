@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
-import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -161,7 +160,7 @@ export default function DataSourceFormDialog({
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <ScrollArea className="max-h-[65vh] pr-3">
+            <div className="max-h-[65vh] overflow-y-auto pr-3">
               <div className="space-y-5 pb-2">
 
                 {/* Section 1 — Datos Básicos */}
@@ -357,7 +356,7 @@ export default function DataSourceFormDialog({
                 </div>
 
               </div>
-            </ScrollArea>
+            </div>
 
             <DialogFooter className="pt-4">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>

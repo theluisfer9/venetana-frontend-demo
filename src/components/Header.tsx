@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
-import { Building2, Home, LayoutDashboard, LogIn, LogOut, Menu, Shield, Users, X } from 'lucide-react'
+import { Building2, Database, Home, LayoutDashboard, LogIn, LogOut, Menu, Shield, Users, X } from 'lucide-react'
 import { isAuthenticated, useLogout, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -138,6 +138,15 @@ export default function Header() {
                   >
                     <Building2 size={20} />
                     <span className="font-medium">Instituciones</span>
+                  </Link>
+                  <Link
+                    to="/datasources"
+                    onClick={() => setIsOpen(false)}
+                    className={linkClass}
+                    activeProps={{ className: activeLinkClass }}
+                  >
+                    <Database size={20} />
+                    <span className="font-medium">Fuentes de Datos</span>
                   </Link>
                 </>
               )}
