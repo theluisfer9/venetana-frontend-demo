@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createRoute, redirect } from '@tanstack/react-router'
-import { isAuthenticated } from '@/hooks/use-auth'
+import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import {
   useDatasources,
   useCreateDatasource,
@@ -39,6 +39,17 @@ import type {
 import type { AnyRoute } from '@tanstack/react-router'
 
 function DataSourcesPage() {
+  const { canAccessModule, isAdmin, can } = usePermissions()
+  const navigate = useNavigate()
+
+  // Permission guard
+  if (!isAdmin && !canAccessModule('datasources')) {
+    navigate({ to: '/dashboard' })
+    return null
+  }
+
+  const canManageDs = can('datasources:manage')
+
   const { data: datasources, isLoading } = useDatasources()
   const createDs = useCreateDatasource()
   const updateDs = useUpdateDatasource()
@@ -115,9 +126,11 @@ function DataSourcesPage() {
       <div className="max-w-6xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Fuentes de Datos</h2>
-          <Button onClick={handleOpenCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Nueva Fuente
-          </Button>
+          {canManageDs && (
+            <Button onClick={handleOpenCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Nueva Fuente
+            </Button>
+          )}
         </div>
 
         <div className="bg-white rounded-lg border">
@@ -187,28 +200,30 @@ function DataSourcesPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex justify-end gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenEdit(ds)}
-                          title="Editar"
-                        >
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleToggleActive(ds)}
-                          title={ds.is_active ? 'Desactivar' : 'Activar'}
-                        >
-                          {ds.is_active ? (
-                            <PowerOff className="h-3.5 w-3.5 text-red-500" />
-                          ) : (
-                            <Power className="h-3.5 w-3.5 text-green-600" />
-                          )}
-                        </Button>
-                      </div>
+                      {canManageDs && (
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenEdit(ds)}
+                            title="Editar"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleToggleActive(ds)}
+                            title={ds.is_active ? 'Desactivar' : 'Activar'}
+                          >
+                            {ds.is_active ? (
+                              <PowerOff className="h-3.5 w-3.5 text-red-500" />
+                            ) : (
+                              <Power className="h-3.5 w-3.5 text-green-600" />
+                            )}
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))

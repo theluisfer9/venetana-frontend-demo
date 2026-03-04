@@ -17,7 +17,7 @@ import type {
 export function useAvailableDataSources() {
   return useQuery({
     queryKey: ['queries', 'datasources'],
-    queryFn: () => apiClient.get<AvailableDataSource[]>('/queries/datasources'),
+    queryFn: () => apiClient.get<AvailableDataSource[]>('/datasources/'),
     enabled: isAuthenticated(),
     staleTime: 10 * 60 * 1000,
   })

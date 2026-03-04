@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createRoute, redirect } from '@tanstack/react-router'
-import { isAuthenticated } from '@/hooks/use-auth'
+import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import {
   useInstitutions,
   useCreateInstitution,
@@ -35,6 +35,19 @@ import type { Institution } from '@/lib/admin-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function InstitutionsPage() {
+  const { canAccessModule, isAdmin, can } = usePermissions()
+  const navigate = useNavigate()
+
+  // Permission guard (institutions tied to users module)
+  if (!isAdmin && !canAccessModule('users')) {
+    navigate({ to: '/dashboard' })
+    return null
+  }
+
+  const canCreate = can('users:create')
+  const canEdit = can('users:edit')
+  const canDelete = can('users:delete')
+
   const { data: institutions, isLoading } = useInstitutions(true)
   const createInst = useCreateInstitution()
   const updateInst = useUpdateInstitution()
@@ -99,9 +112,11 @@ function InstitutionsPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Instituciones</h2>
-          <Button onClick={handleOpenCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Nueva Institución
-          </Button>
+          {canCreate && (
+            <Button onClick={handleOpenCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Nueva Institución
+            </Button>
+          )}
         </div>
 
         <div className="bg-white rounded-lg border">
@@ -145,10 +160,12 @@ function InstitutionsPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(inst)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        {inst.is_active && (
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(inst)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {canDelete && inst.is_active && (
                           <Button variant="ghost" size="sm" onClick={() => handleDelete(inst)}>
                             <Trash2 className="h-3.5 w-3.5 text-red-500" />
                           </Button>

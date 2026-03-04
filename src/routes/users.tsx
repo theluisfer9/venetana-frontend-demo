@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createRoute, redirect } from '@tanstack/react-router'
-import { isAuthenticated, useCurrentUser } from '@/hooks/use-auth'
+import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import { useUsers, useCreateUser, useUpdateUser, useDeleteUser, useActivateUser } from '@/hooks/use-users'
 import { useRoles } from '@/hooks/use-roles'
 import { useInstitutions } from '@/hooks/use-institutions'
@@ -30,7 +30,19 @@ import type { User, UserFilters } from '@/lib/admin-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function UsersPage() {
-  const { data: currentUser } = useCurrentUser()
+  const { user: currentUser, can, canAccessModule, isAdmin } = usePermissions()
+  const navigate = useNavigate()
+
+  // Permission guard
+  if (!isAdmin && !canAccessModule('users')) {
+    navigate({ to: '/dashboard' })
+    return null
+  }
+
+  const canCreate = can('users:create')
+  const canEdit = can('users:edit')
+  const canDelete = can('users:delete')
+
   const [page, setPage] = useState(1)
   const size = 15
   const [filters, setFilters] = useState<UserFilters>({})
@@ -108,9 +120,11 @@ function UsersPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Usuarios</h2>
-          <Button onClick={handleOpenCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Nuevo Usuario
-          </Button>
+          {canCreate && (
+            <Button onClick={handleOpenCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Nuevo Usuario
+            </Button>
+          )}
         </div>
 
         {/* Filters */}
@@ -217,10 +231,12 @@ function UsersPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(user)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        {user.id !== currentUser?.id && (
+                        {canEdit && (
+                          <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(user)}>
+                            <Pencil className="h-3.5 w-3.5" />
+                          </Button>
+                        )}
+                        {canDelete && user.id !== currentUser?.id && (
                           <Button
                             variant="ghost"
                             size="sm"

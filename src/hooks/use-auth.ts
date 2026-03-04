@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient, setTokens, clearTokens, getAccessToken } from '@/lib/api'
 import type { LoginRequest, TokenResponse, CurrentUser } from '@/lib/auth-types'
+import { hasPermission, hasModuleAccess, type PermissionModuleValue } from '@/lib/permissions'
 
 export function isAuthenticated(): boolean {
   return getAccessToken() !== null
@@ -53,4 +54,28 @@ export function useLogout() {
       queryClient.removeQueries({ queryKey: ['auth'] })
     },
   })
+}
+
+/**
+ * Hook that provides permission-checking functions bound to the current user.
+ * Admin users always return true for all checks.
+ */
+export function usePermissions() {
+  const { data: user } = useCurrentUser()
+  const admin = isAdminRole(user?.role_code)
+
+  return {
+    user,
+    isAdmin: admin,
+    /** Check exact permission code. Admins always return true. */
+    can: (permission: string): boolean => {
+      if (admin) return true
+      return hasPermission(user?.permissions, permission)
+    },
+    /** Check if user has ANY permission in a module. Admins always return true. */
+    canAccessModule: (module: PermissionModuleValue): boolean => {
+      if (admin) return true
+      return hasModuleAccess(user?.permissions, module)
+    },
+  }
 }
