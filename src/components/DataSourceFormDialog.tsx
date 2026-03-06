@@ -147,200 +147,233 @@ export default function DataSourceFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg">
-        <DialogHeader>
-          <DialogTitle>
-            {isEdit ? 'Editar Fuente de Datos' : 'Nueva Fuente de Datos'}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-2xl p-0 gap-0 overflow-hidden">
+        {/* Header */}
+        <div className="border-b bg-gray-50/80 px-6 py-4">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold">
+              {isEdit ? 'Editar Fuente de Datos' : 'Nueva Fuente de Datos'}
+            </DialogTitle>
+            {isEdit && (
+              <p className="text-xs text-gray-400 font-mono mt-0.5">{code}</p>
+            )}
+          </DialogHeader>
+        </div>
 
         {isLoadingEditData ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+          <div className="flex flex-col items-center justify-center py-16 gap-3">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-300" />
+            <p className="text-sm text-gray-400">Cargando datos…</p>
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            <div className="max-h-[65vh] overflow-y-auto pr-3">
-              <div className="space-y-5 pb-2">
+            <ScrollArea className="max-h-[60vh]">
+              <div className="px-6 py-5 space-y-6">
 
                 {/* Section 1 — Datos Básicos */}
-                <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Datos Básicos
-                  </p>
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-gray-900" />
+                    <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                      Datos Básicos
+                    </h3>
+                  </div>
 
-                  <div>
-                    <Label className="text-xs mb-1 block">Código *</Label>
-                    <Input
-                      value={code}
-                      onChange={(e) => setCode(e.target.value)}
-                      disabled={isEdit}
-                      required={!isEdit}
-                      placeholder="ej. RSH_HOGARES"
-                      className={isEdit ? 'bg-gray-100 text-gray-500' : ''}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1.5 block">Código *</Label>
+                      <Input
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        disabled={isEdit}
+                        required={!isEdit}
+                        placeholder="ej. RSH_HOGARES"
+                        className={`h-9 ${isEdit ? 'bg-gray-50 text-gray-400 border-dashed' : ''}`}
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-gray-500 mb-1.5 block">Nombre *</Label>
+                      <Input
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        placeholder="ej. Hogares RSH"
+                        className="h-9"
+                      />
+                    </div>
                   </div>
 
                   <div>
-                    <Label className="text-xs mb-1 block">Nombre *</Label>
-                    <Input
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      required
-                      placeholder="ej. Hogares RSH"
-                    />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs mb-1 block">Descripción</Label>
+                    <Label className="text-xs text-gray-500 mb-1.5 block">Descripción</Label>
                     <Textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={2}
                       placeholder="Descripción opcional de esta fuente de datos"
+                      className="resize-none"
                     />
                   </div>
-                </div>
+                </section>
 
-                {/* Section 2 — Tabla ClickHouse */}
-                <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Tabla ClickHouse
-                  </p>
+                <div className="border-t border-dashed" />
 
-                  <div>
-                    <Label className="text-xs mb-1 block">Tabla *</Label>
-                    {isLoadingTables ? (
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Cargando tablas…
-                      </div>
-                    ) : (
-                      <Select
-                        value={selectedTable}
-                        onValueChange={handleTableChange}
-                        required
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar tabla…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {(chTables ?? []).map((t) => (
-                            <SelectItem key={t} value={t}>
-                              {t}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
+                {/* Section 2 — Tabla ClickHouse + Columnas */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-gray-900" />
+                    <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                      Tabla ClickHouse
+                    </h3>
                   </div>
 
-                  {selectedTable && (
+                  <div className="grid grid-cols-2 gap-4 items-end">
                     <div>
-                      <p className="text-xs text-gray-500">
+                      <Label className="text-xs text-gray-500 mb-1.5 block">Tabla *</Label>
+                      {isLoadingTables ? (
+                        <div className="flex items-center gap-2 text-xs text-gray-400 h-9">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Cargando tablas…
+                        </div>
+                      ) : (
+                        <Select
+                          value={selectedTable}
+                          onValueChange={handleTableChange}
+                          required
+                        >
+                          <SelectTrigger className="h-9">
+                            <SelectValue placeholder="Seleccionar tabla…" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {(chTables ?? []).map((t) => (
+                              <SelectItem key={t} value={t}>
+                                {t}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    {selectedTable && (
+                      <div className="flex items-center h-9 text-xs text-gray-400">
                         {isLoadingColumns ? (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1.5">
                             <Loader2 className="h-3 w-3 animate-spin" />
                             Cargando columnas…
                           </span>
                         ) : (
-                          <span>{(chColumns ?? []).length} columnas encontradas</span>
+                          <span className="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                            {(chColumns ?? []).length} columnas
+                          </span>
                         )}
-                      </p>
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    )}
+                  </div>
+                </section>
 
                 {/* Section 3 — Filtro Base */}
                 {selectedTable && (
-                  <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
-                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                      Filtro Base
-                    </p>
-
-                    {isLoadingColumns ? (
-                      <div className="flex items-center gap-2 text-xs text-gray-400">
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        Cargando columnas booleanas…
+                  <>
+                    <div className="border-t border-dashed" />
+                    <section className="space-y-4">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1 w-1 rounded-full bg-gray-900" />
+                        <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                          Filtro Base
+                        </h3>
                       </div>
-                    ) : booleanColumns.length === 0 ? (
-                      <p className="text-xs text-gray-400">
-                        No hay columnas booleanas en esta tabla.
-                      </p>
-                    ) : (
-                      <>
-                        <p className="text-xs text-gray-500">
-                          Selecciona las columnas booleanas que actuarán como filtro base
-                          (deben ser <code className="font-mono">true</code>).
-                        </p>
 
-                        <div className="space-y-2">
-                          {booleanColumns.map((col) => (
-                            <div key={col.name} className="flex items-center gap-2">
-                              <Checkbox
-                                id={`col-${col.name}`}
-                                checked={baseFilterColumns.includes(col.name)}
-                                onCheckedChange={(checked) =>
-                                  toggleFilterColumn(col.name, !!checked)
-                                }
-                              />
-                              <label
-                                htmlFor={`col-${col.name}`}
-                                className="text-sm font-mono cursor-pointer select-none"
-                              >
-                                {col.name}
-                                <span className="ml-1.5 text-xs text-gray-400 font-sans">
-                                  ({col.type})
-                                </span>
-                              </label>
-                            </div>
-                          ))}
+                      {isLoadingColumns ? (
+                        <div className="flex items-center gap-2 text-xs text-gray-400">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          Cargando columnas booleanas…
                         </div>
+                      ) : booleanColumns.length === 0 ? (
+                        <p className="text-xs text-gray-400 italic">
+                          No hay columnas booleanas en esta tabla.
+                        </p>
+                      ) : (
+                        <>
+                          <p className="text-xs text-gray-400 leading-relaxed">
+                            Columnas booleanas que actuarán como filtro base
+                            (deben ser <code className="font-mono bg-gray-100 px-1 rounded">true</code>).
+                          </p>
 
-                        {baseFilterColumns.length > 1 && (
-                          <div className="flex items-center gap-2 pt-1">
-                            <Label className="text-xs">Lógica:</Label>
-                            <div className="flex rounded-md border border-gray-200 overflow-hidden text-xs">
-                              <button
-                                type="button"
-                                onClick={() => setBaseFilterLogic('AND')}
-                                className={`px-3 py-1 transition-colors ${
-                                  baseFilterLogic === 'AND'
-                                    ? 'bg-gray-900 text-white'
-                                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
+                          <div className="grid grid-cols-2 gap-x-4 gap-y-2.5">
+                            {booleanColumns.map((col) => (
+                              <div
+                                key={col.name}
+                                className="flex items-center gap-2.5 rounded-md border border-transparent px-2 py-1.5 hover:bg-gray-50 hover:border-gray-200 transition-colors"
                               >
-                                AND
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => setBaseFilterLogic('OR')}
-                                className={`px-3 py-1 transition-colors ${
-                                  baseFilterLogic === 'OR'
-                                    ? 'bg-gray-900 text-white'
-                                    : 'bg-white text-gray-600 hover:bg-gray-50'
-                                }`}
-                              >
-                                OR
-                              </button>
-                            </div>
+                                <Checkbox
+                                  id={`col-${col.name}`}
+                                  checked={baseFilterColumns.includes(col.name)}
+                                  onCheckedChange={(checked) =>
+                                    toggleFilterColumn(col.name, !!checked)
+                                  }
+                                />
+                                <label
+                                  htmlFor={`col-${col.name}`}
+                                  className="text-sm font-mono cursor-pointer select-none flex-1"
+                                >
+                                  {col.name}
+                                  <span className="ml-1.5 text-[11px] text-gray-400 font-sans">
+                                    {col.type}
+                                  </span>
+                                </label>
+                              </div>
+                            ))}
                           </div>
-                        )}
-                      </>
-                    )}
-                  </div>
+
+                          {baseFilterColumns.length > 1 && (
+                            <div className="flex items-center gap-3 pt-1">
+                              <Label className="text-xs text-gray-500">Lógica entre filtros:</Label>
+                              <div className="inline-flex rounded-lg border border-gray-200 p-0.5 bg-gray-100">
+                                <button
+                                  type="button"
+                                  onClick={() => setBaseFilterLogic('AND')}
+                                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                                    baseFilterLogic === 'AND'
+                                      ? 'bg-white text-gray-900 shadow-sm'
+                                      : 'text-gray-500 hover:text-gray-700'
+                                  }`}
+                                >
+                                  AND
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setBaseFilterLogic('OR')}
+                                  className={`px-3 py-1 rounded-md text-xs font-medium transition-all ${
+                                    baseFilterLogic === 'OR'
+                                      ? 'bg-white text-gray-900 shadow-sm'
+                                      : 'text-gray-500 hover:text-gray-700'
+                                  }`}
+                                >
+                                  OR
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </section>
+                  </>
                 )}
 
-                {/* Section 4 — Institución */}
-                <div className="rounded-md border border-gray-200 bg-gray-50 p-4 space-y-3">
-                  <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
-                    Institución
-                  </p>
+                <div className="border-t border-dashed" />
 
-                  <div>
-                    <Label className="text-xs mb-1 block">Institución asociada</Label>
+                {/* Section 4 — Institución */}
+                <section className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1 w-1 rounded-full bg-gray-900" />
+                    <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">
+                      Institución
+                    </h3>
+                  </div>
+
+                  <div className="max-w-xs">
+                    <Label className="text-xs text-gray-500 mb-1.5 block">Institución asociada</Label>
                     <Select value={institutionId} onValueChange={setInstitutionId}>
-                      <SelectTrigger>
+                      <SelectTrigger className="h-9">
                         <SelectValue placeholder="Sin institución" />
                       </SelectTrigger>
                       <SelectContent>
@@ -353,20 +386,26 @@ export default function DataSourceFormDialog({
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                </section>
 
               </div>
             </div>
 
-            <DialogFooter className="pt-4">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
+            {/* Footer */}
+            <div className="border-t bg-gray-50/80 px-6 py-3 flex items-center justify-end gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => onOpenChange(false)}
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isPending || !selectedTable}>
-                {isPending && <Loader2 className="mr-1 h-4 w-4 animate-spin" />}
-                {isEdit ? 'Guardar' : 'Crear'}
+              <Button type="submit" size="sm" disabled={isPending || !selectedTable}>
+                {isPending && <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />}
+                {isEdit ? 'Guardar cambios' : 'Crear fuente'}
               </Button>
-            </DialogFooter>
+            </div>
           </form>
         )}
       </DialogContent>

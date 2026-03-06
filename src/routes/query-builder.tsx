@@ -515,7 +515,7 @@ function QueryBuilderPage() {
                 <QueryFilterBuilder
                   columns={currentDs.columns}
                   filters={filters}
-                  onChange={isViewOnly ? () => {} : setFilters}
+                  onChange={setFilters}
                 />
               </CardContent>
             </Card>
@@ -546,20 +546,18 @@ function QueryBuilderPage() {
               </Card>
             )}
 
-            {!isViewOnly && (
-              <Button
-                onClick={() => handleExecute(0)}
-                disabled={selectedColumns.length === 0 || executeQuery.isPending}
-                className="gap-1.5"
-              >
-                {executeQuery.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-                Ejecutar
-              </Button>
-            )}
+            <Button
+              onClick={() => handleExecute(0)}
+              disabled={selectedColumns.length === 0 || executeQuery.isPending}
+              className="gap-1.5"
+            >
+              {executeQuery.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              Ejecutar
+            </Button>
           </>
         )}
 
