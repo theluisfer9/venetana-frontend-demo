@@ -1,5 +1,5 @@
 import { createRoute, redirect, useNavigate, Link } from '@tanstack/react-router'
-import { useCurrentUser, useLogout, isAuthenticated, isAdminRole } from '@/hooks/use-auth'
+import { useCurrentUser, useLogout, isAuthenticated } from '@/hooks/use-auth'
 import { useInstitutionPreset, useConsultaDashboard } from '@/hooks/use-consulta'
 import { useDashboard } from '@/hooks/use-dashboard'
 
@@ -73,7 +73,7 @@ function InstitutionCards() {
 
 function DashboardPage() {
   const { data: user, isLoading, isError } = useCurrentUser()
-  const isAdmin = isAdminRole(user?.role_code)
+  const isAdmin = !!user?.permissions?.includes('system:config')
   const { data: unifiedDashboard, isLoading: dashboardLoading } = useDashboard(isAdmin)
   const logout = useLogout()
   const navigate = useNavigate()
