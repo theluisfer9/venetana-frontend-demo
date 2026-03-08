@@ -1,12 +1,15 @@
 import { createRoute, redirect, useNavigate, Link } from '@tanstack/react-router'
-import { useCurrentUser, useLogout, isAuthenticated } from '@/hooks/use-auth'
+import { useCurrentUser, useLogout, isAuthenticated, isAdminRole } from '@/hooks/use-auth'
 import { useInstitutionPreset, useConsultaDashboard } from '@/hooks/use-consulta'
+import { useDashboard } from '@/hooks/use-dashboard'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { LogOut, Users, ChevronRight, Database, Plus } from 'lucide-react'
 import DashboardWidgets from '@/components/DashboardWidgets'
+import AdminDashboard from '@/components/AdminDashboard'
+import type { AdminDashboardStats } from '@/lib/dashboard-types'
 
 import type { AnyRoute } from '@tanstack/react-router'
 
@@ -70,6 +73,8 @@ function InstitutionCards() {
 
 function DashboardPage() {
   const { data: user, isLoading, isError } = useCurrentUser()
+  const isAdmin = isAdminRole(user?.role_code)
+  const { data: unifiedDashboard, isLoading: dashboardLoading } = useDashboard(isAdmin)
   const logout = useLogout()
   const navigate = useNavigate()
 
@@ -145,11 +150,17 @@ function DashboardPage() {
           </div>
         </div>
 
-        {/* Institutional intervention cards */}
-        {user.institution_code && <InstitutionCards />}
-
-        {/* Dashboard widgets */}
-        <DashboardWidgets />
+        {isAdmin ? (
+          <AdminDashboard
+            stats={unifiedDashboard as AdminDashboardStats | undefined}
+            isLoading={dashboardLoading}
+          />
+        ) : (
+          <>
+            {user.institution_code && <InstitutionCards />}
+            <DashboardWidgets />
+          </>
+        )}
       </div>
     </div>
   )

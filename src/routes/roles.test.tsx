@@ -21,6 +21,9 @@ const mockCreateRole = vi.fn()
 const mockUpdateRole = vi.fn()
 const mockDeleteRole = vi.fn()
 const mockUpdatePerms = vi.fn()
+const mockUseAllDataSources = vi.fn()
+const mockUseRoleDataSources = vi.fn()
+const mockUpdateRoleDataSources = vi.fn()
 
 vi.mock('@/hooks/use-roles', () => ({
   useRoles: () => mockUseRoles(),
@@ -29,6 +32,9 @@ vi.mock('@/hooks/use-roles', () => ({
   useUpdateRole: () => ({ mutate: mockUpdateRole, isPending: false }),
   useDeleteRole: () => ({ mutate: mockDeleteRole, isPending: false }),
   useUpdateRolePermissions: () => ({ mutate: mockUpdatePerms, isPending: false }),
+  useAllDataSources: () => mockUseAllDataSources(),
+  useRoleDataSources: () => mockUseRoleDataSources(),
+  useUpdateRoleDataSources: () => ({ mutate: mockUpdateRoleDataSources, isPending: false }),
 }))
 
 vi.mock('@tanstack/react-router', async (importOriginal) => {
@@ -58,6 +64,8 @@ describe('RolesPage', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockUsePermissions.mockReturnValue({ data: [makePermission()] })
+    mockUseAllDataSources.mockReturnValue({ data: [], isLoading: false })
+    mockUseRoleDataSources.mockReturnValue({ data: [], isLoading: false })
   })
 
   it('renders "Roles" heading', async () => {
@@ -123,13 +131,12 @@ describe('RolesPage', () => {
     mockUseRoles.mockReturnValue({ data: [role], isLoading: false })
 
     const RolesPage = await importRolesPage()
-    const { container } = renderWithQuery(<RolesPage />)
+    renderWithQuery(<RolesPage />)
 
-    // There should be edit and shield buttons but no trash button for system roles
+    // There should be edit, permissions, and datasources buttons but no trash button.
     const row = screen.getByText(role.name).closest('tr')
     const buttons = row ? Array.from(row.querySelectorAll('button')) : []
-    // Should have at most 2 action buttons (edit + permissions), not 3
-    expect(buttons.length).toBeLessThanOrEqual(2)
+    expect(buttons.length).toBe(3)
   })
 
   it('shows delete button for non-system roles', async () => {
@@ -141,8 +148,8 @@ describe('RolesPage', () => {
 
     const row = screen.getByText('Custom Role').closest('tr')
     const buttons = row ? Array.from(row.querySelectorAll('button')) : []
-    // Should have 3 action buttons: edit, permissions, delete
-    expect(buttons.length).toBe(3)
+    // Should have 4 action buttons: edit, permissions, datasources, delete
+    expect(buttons.length).toBe(4)
   })
 
   it('opens create dialog when "Nuevo Rol" is clicked', async () => {
@@ -219,8 +226,8 @@ describe('RolesPage', () => {
 
       const row = screen.getByText('Borrable').closest('tr')
       const buttons = row ? Array.from(row.querySelectorAll('button')) : []
-      expect(buttons.length).toBe(3)
-      await userEvent.click(buttons[2])
+      expect(buttons.length).toBe(4)
+      await userEvent.click(buttons[3])
 
       // AlertDialog should appear with role name in description
       await waitFor(() => {
@@ -245,11 +252,11 @@ describe('RolesPage', () => {
 
       const row = screen.getByText('NoDelete').closest('tr')
       const buttons = row ? Array.from(row.querySelectorAll('button')) : []
-      await userEvent.click(buttons[2])
+      await userEvent.click(buttons[3])
 
       // AlertDialog should appear
       await waitFor(() => {
-        expect(screen.getByText('¿Eliminar rol?')).toBeDefined()
+        expect(screen.getByRole('heading', { name: /eliminar rol/i })).toBeDefined()
       })
 
       // Click "Cancelar" in the AlertDialog

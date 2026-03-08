@@ -55,7 +55,9 @@ async function request<T>(
     body: body ? JSON.stringify(body) : undefined,
   })
 
-  const json = await response.json()
+  const hasNoContent = response.status === 204 || response.headers.get('content-length') === '0'
+  const isJsonResponse = response.headers.get('content-type')?.includes('application/json')
+  const json = hasNoContent ? null : isJsonResponse ? await response.json() : null
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/login') {
