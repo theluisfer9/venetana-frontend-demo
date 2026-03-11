@@ -500,47 +500,53 @@ function QueryBuilderPage() {
         {/* ── Columns, Filters, Execute ── */}
         {currentDs && (
           <>
-            <Card>
-              <CardContent className="p-4">
-                <QueryColumnSelector
-                  columns={currentDs.columns}
-                  selected={selectedColumns}
-                  onChange={isViewOnly ? () => {} : setSelectedColumns}
-                />
-              </CardContent>
-            </Card>
+            {/* Columnas y agrupaciones: ocultas para usuario institucional sin permisos */}
+            {!isViewOnly && (
+              <Card>
+                <CardContent className="p-4">
+                  <QueryColumnSelector
+                    columns={currentDs.columns}
+                    selected={selectedColumns}
+                    onChange={setSelectedColumns}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent className="p-4">
                 <QueryFilterBuilder
-                  columns={currentDs.columns}
+                  columns={selectedColumns.length > 0
+                    ? currentDs.columns.filter((c) => selectedColumns.includes(c.column_name))
+                    : currentDs.columns
+                  }
                   filters={filters}
                   onChange={setFilters}
                 />
               </CardContent>
             </Card>
 
-            {/* ── Group By ── */}
-            {currentDs.columns.some((c) => c.is_groupable) && (
+            {/* ── Group By (oculto en view-only) ── */}
+            {!isViewOnly && currentDs.columns.some((c) => c.is_groupable) && (
               <Card>
                 <CardContent className="p-4">
                   <QueryGroupBySelector
                     columns={currentDs.columns}
                     selected={groupBy}
-                    onChange={isViewOnly ? () => {} : setGroupBy}
+                    onChange={setGroupBy}
                   />
                 </CardContent>
               </Card>
             )}
 
-            {/* ── Aggregations (only when groupBy active) ── */}
-            {groupBy.length > 0 && (
+            {/* ── Aggregations (oculto en view-only) ── */}
+            {!isViewOnly && groupBy.length > 0 && (
               <Card>
                 <CardContent className="p-4">
                   <QueryAggregationSelector
                     columns={currentDs.columns}
                     aggregations={aggregations}
-                    onChange={isViewOnly ? () => {} : setAggregations}
+                    onChange={setAggregations}
                   />
                 </CardContent>
               </Card>

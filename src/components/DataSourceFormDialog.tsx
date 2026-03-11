@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Select,
   SelectContent,
@@ -389,7 +390,7 @@ export default function DataSourceFormDialog({
                 </section>
 
               </div>
-            </div>
+            </ScrollArea>
 
             {/* Footer */}
             <div className="border-t bg-gray-50/80 px-6 py-3 flex items-center justify-end gap-2">

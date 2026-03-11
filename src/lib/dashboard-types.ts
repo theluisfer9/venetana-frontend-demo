@@ -46,6 +46,8 @@ export interface AdminDashboardStats {
   municipios_finalizados: number
   municipios_en_progreso: number
   promedio_ipm: number
+  promedio_pmt: number
+  promedio_nbi: number
   por_ipm_clasificacion: DashboardClasificacionCount[]
   personas_por_sexo: DashboardSexoCount[]
   por_departamento: DashboardDepartamentoCount[]
@@ -63,12 +65,16 @@ export interface InstitutionalDashboardStats {
   municipios_finalizados: number
   municipios_en_progreso: number
   promedio_ipm: number
+  promedio_pmt: number
+  promedio_nbi: number
   por_ipm_clasificacion: DashboardClasificacionCount[]
   personas_por_sexo: DashboardSexoCount[]
   por_departamento: DashboardDepartamentoCount[]
   inseguridad_alimentaria: DashboardInseguridadCount[]
   total_consultas: number
   total_fuentes_datos: number
+  bonos: Record<string, Record<string, number>>
+  bonos_por_departamento: Record<string, { departamento: string; codigo: string; [key: string]: string | number }[]>
 }
 
 export type UnifiedDashboardStats = AdminDashboardStats | InstitutionalDashboardStats

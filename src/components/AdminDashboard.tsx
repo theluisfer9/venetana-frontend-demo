@@ -2,6 +2,10 @@ import { Building2, Map, MapPinned, Users, House, UsersRound, Download, CircleDa
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import {
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  PieChart, Pie, Cell,
+} from 'recharts'
 import type { AdminDashboardStats } from '@/lib/dashboard-types'
 
 type Props = {
@@ -18,8 +22,42 @@ type SummaryMetric = {
   tone: string
 }
 
+const COLORS_PIE = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
+const COLORS_INSEG = ['#22c55e', '#facc15', '#f97316', '#ef4444']
+const COLORS_SEXO = ['#6366f1', '#ec4899']
+
 function formatNumber(value: number | undefined) {
   return (value ?? 0).toLocaleString()
+}
+
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: { value: number; name: string; color: string }[]; label?: string }) {
+  if (!active || !payload?.length) return null
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 shadow-lg text-xs">
+      {label && <p className="font-semibold text-slate-700 mb-1">{label}</p>}
+      {payload.map((p, i) => (
+        <p key={i} className="text-slate-600">
+          <span className="inline-block w-2 h-2 rounded-full mr-1.5" style={{ backgroundColor: p.color }} />
+          {p.name}: <span className="font-semibold text-slate-900">{formatNumber(p.value)}</span>
+        </p>
+      ))}
+    </div>
+  )
+}
+
+function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }: {
+  cx: number; cy: number; midAngle: number; innerRadius: number; outerRadius: number; percent: number; name: string
+}) {
+  if (percent < 0.05) return null
+  const RADIAN = Math.PI / 180
+  const radius = innerRadius + (outerRadius - innerRadius) * 1.4
+  const x = cx + radius * Math.cos(-midAngle * RADIAN)
+  const y = cy + radius * Math.sin(-midAngle * RADIAN)
+  return (
+    <text x={x} y={y} fill="#475569" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central" fontSize={11}>
+      {name} ({(percent * 100).toFixed(0)}%)
+    </text>
+  )
 }
 
 export default function AdminDashboard({ stats, isLoading }: Props) {
@@ -110,10 +148,35 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
     },
   ]
 
-  const maxDepto = Math.max(...stats.por_departamento.map((item) => item.cantidad), 1)
+  // Prepare chart data
+  const deptoData = [...stats.por_departamento]
+    .sort((a, b) => b.cantidad - a.cantidad)
+    .slice(0, 15)
+    .map((d) => ({ name: d.departamento, hogares: d.cantidad }))
+
+  const benefData = stats.beneficiarios_por_institucion.map((b) => ({
+    name: b.institution,
+    beneficiarios: b.potenciales_beneficiarios,
+  }))
+
+  const ipmData = stats.por_ipm_clasificacion.map((c) => ({
+    name: c.clasificacion,
+    value: c.cantidad,
+  }))
+
+  const sexoData = stats.personas_por_sexo.map((s) => ({
+    name: s.sexo,
+    value: s.cantidad,
+  }))
+
+  const insegData = stats.inseguridad_alimentaria.map((i) => ({
+    name: i.nivel,
+    value: i.cantidad,
+  }))
 
   return (
     <div className="space-y-6">
+      {/* ── Summary metric cards ── */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {summaryMetrics.map((metric) => (
           <Card key={metric.key} className="border-slate-200 shadow-sm">
@@ -133,18 +196,180 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
         ))}
       </div>
 
+      {/* ── Promedios IPM / PMT / NBI ── */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card className="border-slate-200 bg-slate-950 text-white">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
+              <Scale className="h-4 w-4" />
+              Promedio IPM
+            </div>
+            <p className="mt-2 text-4xl font-bold tracking-tight">{stats.promedio_ipm.toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200 bg-indigo-950 text-white">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-indigo-300">
+              <Scale className="h-4 w-4" />
+              Promedio PMT
+            </div>
+            <p className="mt-2 text-4xl font-bold tracking-tight">{(stats.promedio_pmt ?? 0).toFixed(2)}</p>
+          </CardContent>
+        </Card>
+        <Card className="border-slate-200 bg-emerald-950 text-white">
+          <CardContent className="p-5">
+            <div className="flex items-center gap-2 text-sm font-medium text-emerald-300">
+              <Scale className="h-4 w-4" />
+              Promedio NBI
+            </div>
+            <p className="mt-2 text-4xl font-bold tracking-tight">{(stats.promedio_nbi ?? 0).toFixed(2)}</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Row: Departamentos bar chart + Beneficiarios bar chart ── */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Usuarios por institución</CardTitle>
-            <CardDescription>Incluye el conteo de consultas guardadas por institución.</CardDescription>
+            <CardTitle>Distribucion por departamento</CardTitle>
+            <CardDescription>Top 15 departamentos por concentracion de hogares.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={deptoData} layout="vertical" margin={{ left: 20, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => v.toLocaleString()} />
+                <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: '#475569' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="hogares" name="Hogares" fill="#0ea5e9" radius={[0, 4, 4, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Beneficiarios por institucion</CardTitle>
+            <CardDescription>Personas distintas por CUI derivadas de los programas.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={benefData} margin={{ left: 10, right: 20 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#475569' }} />
+                <YAxis tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => v.toLocaleString()} />
+                <Tooltip content={<CustomTooltip />} />
+                <Bar dataKey="beneficiarios" name="Beneficiarios" radius={[4, 4, 0, 0]}>
+                  {benefData.map((_, i) => (
+                    <Cell key={i} fill={COLORS_PIE[i % COLORS_PIE.length]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Row: IPM Pie + Sexo Pie + Inseguridad Pie ── */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Clasificacion IPM</CardTitle>
+            <CardDescription>Distribucion de hogares por nivel de pobreza multidimensional.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={ipmData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={90}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={PieLabel}
+                >
+                  {ipmData.map((_, i) => (
+                    <Cell key={i} fill={COLORS_PIE[i % COLORS_PIE.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatNumber(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Composicion por sexo</CardTitle>
+            <CardDescription>Distribucion de personas por genero.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={sexoData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={90}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={PieLabel}
+                >
+                  {sexoData.map((_, i) => (
+                    <Cell key={i} fill={COLORS_SEXO[i % COLORS_SEXO.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatNumber(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Inseguridad alimentaria</CardTitle>
+            <CardDescription>Hogares por nivel de inseguridad alimentaria.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={insegData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={55}
+                  outerRadius={90}
+                  paddingAngle={3}
+                  dataKey="value"
+                  label={PieLabel}
+                >
+                  {insegData.map((_, i) => (
+                    <Cell key={i} fill={COLORS_INSEG[i % COLORS_INSEG.length]} />
+                  ))}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatNumber(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Row: Usuarios table + Estado territorial ── */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle>Usuarios por institucion</CardTitle>
+            <CardDescription>Incluye el conteo de consultas guardadas por institucion.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Institución</TableHead>
-                  <TableHead>Código</TableHead>
+                  <TableHead>Institucion</TableHead>
+                  <TableHead>Codigo</TableHead>
                   <TableHead className="text-right">Usuarios</TableHead>
                   <TableHead className="text-right">Consultas</TableHead>
                 </TableRow>
@@ -173,30 +398,8 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
 
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Potenciales beneficiarios por institución</CardTitle>
-            <CardDescription>Derivado de los programas configurados en ClickHouse.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {stats.beneficiarios_por_institucion.map((item) => (
-              <div key={item.code} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sm font-medium text-slate-600">{item.institution}</p>
-                    <p className="text-xs font-mono text-slate-500">{item.code}</p>
-                  </div>
-                  <p className="text-2xl font-bold text-slate-950">
-                    {formatNumber(item.potenciales_beneficiarios)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200">
-          <CardHeader>
             <CardTitle>Estado territorial</CardTitle>
-            <CardDescription>Seguimiento de municipios y composición por sexo.</CardDescription>
+            <CardDescription>Seguimiento de municipios y composicion por sexo.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -235,72 +438,7 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle>Pobreza e inseguridad alimentaria</CardTitle>
-            <CardDescription>Promedio IPM, clasificación e inseguridad alimentaria.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="rounded-xl bg-slate-950 p-4 text-white">
-              <div className="flex items-center gap-2 text-sm font-medium text-slate-200">
-                <Scale className="h-4 w-4" />
-                Promedio IPM
-              </div>
-              <p className="mt-2 text-3xl font-bold">{stats.promedio_ipm.toFixed(2)}</p>
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-600">Clasificación IPM</p>
-              {stats.por_ipm_clasificacion.map((item) => (
-                <div key={item.clasificacion} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
-                  <span className="text-sm text-slate-700">{item.clasificacion}</span>
-                  <span className="text-sm font-semibold text-slate-950">{formatNumber(item.cantidad)}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="space-y-3">
-              <p className="text-sm font-medium text-slate-600">Inseguridad alimentaria</p>
-              {stats.inseguridad_alimentaria.map((item) => (
-                <div key={item.nivel} className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 px-3 py-2">
-                  <span className="flex items-center gap-2 text-sm text-slate-700">
-                    <ShieldAlert className="h-4 w-4 text-orange-600" />
-                    {item.nivel}
-                  </span>
-                  <span className="text-sm font-semibold text-slate-950">{formatNumber(item.cantidad)}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
       </div>
-
-      <Card className="border-slate-200">
-        <CardHeader>
-          <CardTitle>Distribución por departamento</CardTitle>
-          <CardDescription>Concentración de hogares por departamento.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          {stats.por_departamento.map((item) => (
-            <div key={item.codigo} className="flex items-center gap-3">
-              <div className="w-40 shrink-0">
-                <p className="truncate text-sm font-medium text-slate-700">{item.departamento}</p>
-                <p className="text-xs font-mono text-slate-400">{item.codigo}</p>
-              </div>
-              <div className="h-3 flex-1 overflow-hidden rounded-full bg-slate-100">
-                <div
-                  className="h-full rounded-full bg-sky-500"
-                  style={{ width: `${(item.cantidad / maxDepto) * 100}%` }}
-                />
-              </div>
-              <p className="w-16 text-right text-sm font-semibold text-slate-950">
-                {formatNumber(item.cantidad)}
-              </p>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
     </div>
   )
 }
