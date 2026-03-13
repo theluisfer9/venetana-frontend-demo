@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createRoute, redirect } from '@tanstack/react-router'
 import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
-import { useBeneficiarios, useBeneficiarioStats, useBeneficiarioDetail, useExportExcel, useExportPdf } from '@/hooks/use-beneficiarios'
+import { useBeneficiarios, useBeneficiarioStats, useBeneficiarioDetail, useExportExcel, useExportCsv, useExportPdf } from '@/hooks/use-beneficiarios'
 import StatsBar from '@/components/StatsBar'
 import BeneficiarioFiltersPanel from '@/components/BeneficiarioFilters'
 import BeneficiarioTable from '@/components/BeneficiarioTable'
@@ -16,6 +16,13 @@ import {
 } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import { ArrowLeft, X, FileSpreadsheet, FileText } from 'lucide-react'
 import type { BeneficiarioFilters } from '@/lib/beneficiario-types'
 import type { AnyRoute } from '@tanstack/react-router'
@@ -263,17 +270,29 @@ function BeneficiariosPage() {
   const [filters, setFilters] = useState<BeneficiarioFilters>({})
   const [offset, setOffset] = useState(0)
   const [selectedId, setSelectedId] = useState<number | null>(null)
+  const [downloadFormat, setDownloadFormat] = useState<'excel' | 'csv'>('excel')
   const limit = 10
 
   const { data, isLoading } = useBeneficiarios(filters, offset, limit)
   const { data: stats, isLoading: statsLoading } = useBeneficiarioStats(filters)
   const exportExcel = useExportExcel(filters)
+  const exportCsv = useExportCsv(filters)
   const exportPdf = useExportPdf(filters)
+
+  const isTabularExportPending = exportExcel.isPending || exportCsv.isPending
 
   function handleApplyFilters(newFilters: BeneficiarioFilters) {
     setFilters(newFilters)
     setOffset(0)
     setSelectedId(null)
+  }
+
+  function handleExportTabular() {
+    if (downloadFormat === 'csv') {
+      exportCsv.mutate()
+      return
+    }
+    exportExcel.mutate()
   }
 
   return (
@@ -284,14 +303,26 @@ function BeneficiariosPage() {
           <h2 className="text-2xl font-bold text-gray-900">Consulta de Beneficiarios</h2>
           {canExport && (
             <div className="flex items-center gap-2">
+              <Select
+                value={downloadFormat}
+                onValueChange={(value: 'excel' | 'csv') => setDownloadFormat(value)}
+              >
+                <SelectTrigger className="w-36 h-9">
+                  <SelectValue placeholder="Formato" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excel">Excel (.xlsx)</SelectItem>
+                  <SelectItem value="csv">CSV (.csv)</SelectItem>
+                </SelectContent>
+              </Select>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportExcel.mutate()}
-                disabled={exportExcel.isPending}
+                onClick={handleExportTabular}
+                disabled={isTabularExportPending}
               >
                 <FileSpreadsheet className="mr-1.5 h-4 w-4" />
-                {exportExcel.isPending ? 'Exportando...' : 'Excel'}
+                {isTabularExportPending ? 'Exportando...' : 'Descargar'}
               </Button>
               <Button
                 variant="outline"

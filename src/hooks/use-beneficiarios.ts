@@ -137,6 +137,18 @@ export function useExportExcel(filters: BeneficiarioFilters) {
   })
 }
 
+export function useExportCsv(filters: BeneficiarioFilters) {
+  return useMutation({
+    mutationFn: () => {
+      const qs = buildQueryString(filters)
+      return apiClient.download(
+        `/beneficiarios/export/csv${qs}`,
+        `beneficiarios_${new Date().toISOString().slice(0, 10)}.csv`,
+      )
+    },
+  })
+}
+
 export function useExportPdf(filters: BeneficiarioFilters) {
   return useMutation({
     mutationFn: () => {
