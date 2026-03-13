@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { createRoute, redirect } from '@tanstack/react-router'
-import { isAuthenticated } from '@/hooks/use-auth'
+import { createRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { isAuthenticated, usePermissions as useAuthPermissions } from '@/hooks/use-auth'
 import {
   useRoles,
   usePermissions,
@@ -42,6 +42,17 @@ import type { Role } from '@/lib/admin-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function RolesPage() {
+  const { canAccessModule, isAdmin, can } = useAuthPermissions()
+  const navigate = useNavigate()
+
+  // Permission guard
+  if (!isAdmin && !canAccessModule('roles')) {
+    navigate({ to: '/dashboard' })
+    return null
+  }
+
+  const canManageRoles = can('roles:manage')
+
   const { data: roles, isLoading } = useRoles()
   const { data: permissions } = usePermissions()
   const createRole = useCreateRole()
@@ -151,9 +162,11 @@ function RolesPage() {
       <div className="max-w-5xl mx-auto space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Roles</h2>
-          <Button onClick={handleOpenCreate} className="gap-1">
-            <Plus className="h-4 w-4" /> Nuevo Rol
-          </Button>
+          {canManageRoles && (
+            <Button onClick={handleOpenCreate} className="gap-1">
+              <Plus className="h-4 w-4" /> Nuevo Rol
+            </Button>
+          )}
         </div>
 
         <div className="bg-white rounded-lg border">
@@ -205,19 +218,23 @@ function RolesPage() {
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(role)}>
-                          <Pencil className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenPerms(role)}>
-                          <Shield className="h-3.5 w-3.5" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleOpenDataSources(role)}>
-                          <Database className="h-3.5 w-3.5" />
-                        </Button>
-                        {!role.is_system && (
-                          <Button variant="ghost" size="sm" onClick={() => handleDelete(role)}>
-                            <Trash2 className="h-3.5 w-3.5 text-red-500" />
-                          </Button>
+                        {canManageRoles && (
+                          <>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenEdit(role)}>
+                              <Pencil className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenPerms(role)}>
+                              <Shield className="h-3.5 w-3.5" />
+                            </Button>
+                            <Button variant="ghost" size="sm" onClick={() => handleOpenDataSources(role)}>
+                              <Database className="h-3.5 w-3.5" />
+                            </Button>
+                            {!role.is_system && (
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(role)}>
+                                <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                              </Button>
+                            )}
+                          </>
                         )}
                       </div>
                     </TableCell>

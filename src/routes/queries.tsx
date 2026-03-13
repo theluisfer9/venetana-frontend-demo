@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createRoute, redirect, Link } from '@tanstack/react-router'
-import { isAuthenticated, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import { useSavedQueries, useDeleteSavedQuery, useExecuteSavedQuery } from '@/hooks/use-query-builder'
 import QueryResultsTable from '@/components/QueryResultsTable'
 import { Button } from '@/components/ui/button'
@@ -24,7 +24,7 @@ import type { QueryExecuteResponse } from '@/lib/query-builder-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function QueriesPage() {
-  const { data: user } = useCurrentUser()
+  const { user, can } = usePermissions()
   const { data: queries, isLoading } = useSavedQueries()
   const deleteQuery = useDeleteSavedQuery()
   const executeSaved = useExecuteSavedQuery()
@@ -32,7 +32,8 @@ function QueriesPage() {
   const [executingId, setExecutingId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
-  const isAdmin = isAdminRole(user?.role_code)
+  const canCreate = can('reports:create')
+  const canEdit = can('reports:create')
 
   function handleExecute(id: string) {
     setExecutingId(id)
@@ -80,16 +81,16 @@ function QueriesPage() {
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">
-              {isAdmin ? 'Mis Consultas' : 'Consultas'}
+              {canCreate ? 'Mis Consultas' : 'Consultas'}
             </h2>
-            {!isAdmin && user?.institution_name && (
+            {!canCreate && user?.institution_name && (
               <p className="text-sm text-gray-500 mt-0.5 flex items-center gap-1">
                 <Building2 className="h-3.5 w-3.5" />
                 {user.institution_name}
               </p>
             )}
           </div>
-          {isAdmin && (
+          {canCreate && (
             <Link to="/queries/new">
               <Button className="gap-1.5">
                 <Plus className="h-4 w-4" />
@@ -105,11 +106,11 @@ function QueriesPage() {
             <CardContent className="p-8 text-center">
               <Database className="h-12 w-12 text-gray-300 mx-auto mb-3" />
               <p className="text-gray-500 mb-4">
-                {isAdmin
+                {canCreate
                   ? 'No tienes consultas guardadas'
                   : 'No hay consultas disponibles para tu institución'}
               </p>
-              {isAdmin && (
+              {canCreate && (
                 <Link to="/queries/new">
                   <Button variant="outline" className="gap-1.5">
                     <Plus className="h-4 w-4" />
@@ -181,8 +182,8 @@ function QueriesPage() {
                         Ejecutar
                       </Button>
 
-                      {/* Ver detalle: solo no-admin */}
-                      {!isAdmin && (
+                      {/* Ver detalle: solo si no puede editar */}
+                      {!canEdit && (
                         <Link to="/queries/new" search={{ id: q.id, view: true }}>
                           <Button variant="outline" size="sm" className="gap-1">
                             <Eye className="h-3.5 w-3.5" />
@@ -191,8 +192,8 @@ function QueriesPage() {
                         </Link>
                       )}
 
-                      {/* Editar: solo admin */}
-                      {isAdmin && (
+                      {/* Editar: solo con permiso */}
+                      {canEdit && (
                         <Link to="/queries/new" search={{ id: q.id }}>
                           <Button variant="outline" size="sm" className="gap-1">
                             <Pencil className="h-3.5 w-3.5" />
@@ -201,8 +202,8 @@ function QueriesPage() {
                         </Link>
                       )}
 
-                      {/* Eliminar: solo admin */}
-                      {isAdmin && (
+                      {/* Eliminar: solo con permiso */}
+                      {canEdit && (
                         <>
                           {confirmDeleteId === q.id ? (
                             <div className="flex items-center gap-1">

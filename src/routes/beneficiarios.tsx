@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { createRoute, redirect } from '@tanstack/react-router'
-import { isAuthenticated } from '@/hooks/use-auth'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import { useBeneficiarios, useBeneficiarioStats, useBeneficiarioDetail, useExportExcel, useExportPdf } from '@/hooks/use-beneficiarios'
 import StatsBar from '@/components/StatsBar'
 import BeneficiarioFiltersPanel from '@/components/BeneficiarioFilters'
@@ -257,6 +257,9 @@ function BeneficiarioDetailPanel({
 }
 
 function BeneficiariosPage() {
+  const { can } = usePermissions()
+  const canExport = can('beneficiaries:export')
+
   const [filters, setFilters] = useState<BeneficiarioFilters>({})
   const [offset, setOffset] = useState(0)
   const [selectedId, setSelectedId] = useState<number | null>(null)
@@ -279,26 +282,28 @@ function BeneficiariosPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-bold text-gray-900">Consulta de Beneficiarios</h2>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportExcel.mutate()}
-              disabled={exportExcel.isPending}
-            >
-              <FileSpreadsheet className="mr-1.5 h-4 w-4" />
-              {exportExcel.isPending ? 'Exportando...' : 'Excel'}
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => exportPdf.mutate()}
-              disabled={exportPdf.isPending}
-            >
-              <FileText className="mr-1.5 h-4 w-4" />
-              {exportPdf.isPending ? 'Exportando...' : 'PDF'}
-            </Button>
-          </div>
+          {canExport && (
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportExcel.mutate()}
+                disabled={exportExcel.isPending}
+              >
+                <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+                {exportExcel.isPending ? 'Exportando...' : 'Excel'}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportPdf.mutate()}
+                disabled={exportPdf.isPending}
+              >
+                <FileText className="mr-1.5 h-4 w-4" />
+                {exportPdf.isPending ? 'Exportando...' : 'PDF'}
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Stats bar */}

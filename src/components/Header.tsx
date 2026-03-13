@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
 import { Building2, Database, Home, LayoutDashboard, LogIn, LogOut, Menu, Shield, Users, X } from 'lucide-react'
-import { isAuthenticated, useLogout, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
+import { isAuthenticated, useLogout, usePermissions } from '@/hooks/use-auth'
 import { useNavigate } from '@tanstack/react-router'
 
 const linkClass =
@@ -15,8 +15,12 @@ export default function Header() {
   const authed = isAuthenticated()
   const logout = useLogout()
   const navigate = useNavigate()
-  const { data: currentUser } = useCurrentUser()
-  const isAdmin = authed && isAdminRole(currentUser?.role_code)
+  const { isAdmin, canAccessModule } = usePermissions()
+  const showAdminSection = authed && (isAdmin
+    || canAccessModule('users')
+    || canAccessModule('roles')
+    || canAccessModule('datasources')
+  )
 
   return (
     <>
@@ -105,49 +109,57 @@ export default function Header() {
                 <span className="font-medium">Consulta Institucional</span>
               </Link>
 
-              {isAdmin && (
+              {showAdminSection && (
                 <>
                   <div className="border-t border-gray-700 mt-4 pt-4">
                     <p className="text-[10px] uppercase tracking-widest text-gray-500 px-3 mb-2">
                       Administración
                     </p>
                   </div>
-                  <Link
-                    to="/users"
-                    onClick={() => setIsOpen(false)}
-                    className={linkClass}
-                    activeProps={{ className: activeLinkClass }}
-                  >
-                    <Users size={20} />
-                    <span className="font-medium">Usuarios</span>
-                  </Link>
-                  <Link
-                    to="/roles"
-                    onClick={() => setIsOpen(false)}
-                    className={linkClass}
-                    activeProps={{ className: activeLinkClass }}
-                  >
-                    <Shield size={20} />
-                    <span className="font-medium">Roles</span>
-                  </Link>
-                  <Link
-                    to="/institutions"
-                    onClick={() => setIsOpen(false)}
-                    className={linkClass}
-                    activeProps={{ className: activeLinkClass }}
-                  >
-                    <Building2 size={20} />
-                    <span className="font-medium">Instituciones</span>
-                  </Link>
-                  <Link
-                    to="/datasources"
-                    onClick={() => setIsOpen(false)}
-                    className={linkClass}
-                    activeProps={{ className: activeLinkClass }}
-                  >
-                    <Database size={20} />
-                    <span className="font-medium">Fuentes de Datos</span>
-                  </Link>
+                  {(isAdmin || canAccessModule('users')) && (
+                    <Link
+                      to="/users"
+                      onClick={() => setIsOpen(false)}
+                      className={linkClass}
+                      activeProps={{ className: activeLinkClass }}
+                    >
+                      <Users size={20} />
+                      <span className="font-medium">Usuarios</span>
+                    </Link>
+                  )}
+                  {(isAdmin || canAccessModule('roles')) && (
+                    <Link
+                      to="/roles"
+                      onClick={() => setIsOpen(false)}
+                      className={linkClass}
+                      activeProps={{ className: activeLinkClass }}
+                    >
+                      <Shield size={20} />
+                      <span className="font-medium">Roles</span>
+                    </Link>
+                  )}
+                  {(isAdmin || canAccessModule('users')) && (
+                    <Link
+                      to="/institutions"
+                      onClick={() => setIsOpen(false)}
+                      className={linkClass}
+                      activeProps={{ className: activeLinkClass }}
+                    >
+                      <Building2 size={20} />
+                      <span className="font-medium">Instituciones</span>
+                    </Link>
+                  )}
+                  {(isAdmin || canAccessModule('datasources')) && (
+                    <Link
+                      to="/datasources"
+                      onClick={() => setIsOpen(false)}
+                      className={linkClass}
+                      activeProps={{ className: activeLinkClass }}
+                    >
+                      <Database size={20} />
+                      <span className="font-medium">Fuentes de Datos</span>
+                    </Link>
+                  )}
                 </>
               )}
 

@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react'
 import { createRoute, redirect, useNavigate, useSearch } from '@tanstack/react-router'
-import { isAuthenticated, useCurrentUser, isAdminRole } from '@/hooks/use-auth'
+import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
 import {
-  useAvailableDataSources,
   useExecuteQuery,
   useSaveQuery,
   useUpdateSavedQuery,
@@ -10,6 +9,7 @@ import {
   useExecuteSavedQuery,
   useInstitutions,
 } from '@/hooks/use-query-builder'
+import { useDatasources, useDatasource } from '@/hooks/use-datasources'
 import QueryColumnSelector from '@/components/QueryColumnSelector'
 import QueryFilterBuilder from '@/components/QueryFilterBuilder'
 import QueryGroupBySelector from '@/components/QueryGroupBySelector'
@@ -38,9 +38,9 @@ function QueryBuilderPage() {
     id?: string
     view?: boolean
   }
-  const { data: user } = useCurrentUser()
-  const isAdmin = isAdminRole(user?.role_code)
-  const { data: dataSources, isLoading: dsLoading } = useAvailableDataSources()
+  const { can } = usePermissions()
+  const canEditQueries = can('reports:create')
+  const { data: dataSources, isLoading: dsLoading } = useDatasources()
   const { data: institutions } = useInstitutions()
   const { data: savedDetail, isLoading: detailLoading } = useSavedQueryDetail(editId ?? null)
   const executeQuery = useExecuteQuery()
@@ -65,15 +65,15 @@ function QueryBuilderPage() {
   const [showSave, setShowSave] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
-  // Admin can always edit, even if they arrive with view=true
-  const isEditing = !!editId && (isAdmin || !viewOnly)
-  const isViewOnly = !!editId && !isAdmin && !!viewOnly
+  // Users with edit permission can always edit, even if they arrive with view=true
+  const isEditing = !!editId && (canEditQueries || !viewOnly)
+  const isViewOnly = !!editId && !canEditQueries && !!viewOnly
   const limit = 20
-  const currentDs = dataSources?.find((ds) => ds.id === datasourceId)
+  const { data: currentDs } = useDatasource(datasourceId || null)
 
   // Load saved query detail into form state
   useEffect(() => {
-    if (savedDetail && dataSources && !loaded) {
+    if (savedDetail && !loaded) {
       setDatasourceId(savedDetail.datasource_id)
       setSelectedColumns(savedDetail.selected_columns)
       setFilters(savedDetail.filters)
@@ -85,7 +85,7 @@ function QueryBuilderPage() {
       setIsShared(savedDetail.is_shared)
       setLoaded(true)
     }
-  }, [savedDetail, dataSources, loaded])
+  }, [savedDetail, loaded])
 
   // Auto-manage aggregations: inject COUNT(*) when groupBy activates, clear when empty
   useEffect(() => {
@@ -102,6 +102,13 @@ function QueryBuilderPage() {
     }
   }, [groupBy.length])
 
+  // Auto-fill institution when datasource loads (and not editing a saved query)
+  useEffect(() => {
+    if (currentDs && !isEditing && !loaded) {
+      setInstitutionId(currentDs.institution_id ?? '')
+    }
+  }, [currentDs, isEditing, loaded])
+
   function handleDatasourceChange(id: string) {
     if (isViewOnly) return
     setDatasourceId(id)
@@ -111,6 +118,7 @@ function QueryBuilderPage() {
     setAggregations([])
     setResults(undefined)
     setOffset(0)
+    setInstitutionId('')
   }
 
   function handleExecute(newOffset = 0) {
@@ -492,66 +500,70 @@ function QueryBuilderPage() {
         {/* ── Columns, Filters, Execute ── */}
         {currentDs && (
           <>
-            <Card>
-              <CardContent className="p-4">
-                <QueryColumnSelector
-                  columns={currentDs.columns}
-                  selected={selectedColumns}
-                  onChange={isViewOnly ? () => {} : setSelectedColumns}
-                />
-              </CardContent>
-            </Card>
+            {/* Columnas y agrupaciones: ocultas para usuario institucional sin permisos */}
+            {!isViewOnly && (
+              <Card>
+                <CardContent className="p-4">
+                  <QueryColumnSelector
+                    columns={currentDs.columns}
+                    selected={selectedColumns}
+                    onChange={setSelectedColumns}
+                  />
+                </CardContent>
+              </Card>
+            )}
 
             <Card>
               <CardContent className="p-4">
                 <QueryFilterBuilder
-                  columns={currentDs.columns}
+                  columns={selectedColumns.length > 0
+                    ? currentDs.columns.filter((c) => selectedColumns.includes(c.column_name))
+                    : currentDs.columns
+                  }
                   filters={filters}
-                  onChange={isViewOnly ? () => {} : setFilters}
+                  onChange={setFilters}
                 />
               </CardContent>
             </Card>
 
-            {/* ── Group By ── */}
-            {currentDs.columns.some((c) => c.is_groupable) && (
+            {/* ── Group By (oculto en view-only) ── */}
+            {!isViewOnly && currentDs.columns.some((c) => c.is_groupable) && (
               <Card>
                 <CardContent className="p-4">
                   <QueryGroupBySelector
                     columns={currentDs.columns}
                     selected={groupBy}
-                    onChange={isViewOnly ? () => {} : setGroupBy}
+                    onChange={setGroupBy}
                   />
                 </CardContent>
               </Card>
             )}
 
-            {/* ── Aggregations (only when groupBy active) ── */}
-            {groupBy.length > 0 && (
+            {/* ── Aggregations (oculto en view-only) ── */}
+            {!isViewOnly && groupBy.length > 0 && (
               <Card>
                 <CardContent className="p-4">
                   <QueryAggregationSelector
                     columns={currentDs.columns}
                     aggregations={aggregations}
-                    onChange={isViewOnly ? () => {} : setAggregations}
+                    onChange={setAggregations}
                   />
                 </CardContent>
               </Card>
             )}
 
-            {!isViewOnly && (
-              <Button
-                onClick={() => handleExecute(0)}
-                disabled={selectedColumns.length === 0 || executeQuery.isPending}
-                className="gap-1.5"
-              >
-                {executeQuery.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Play className="h-4 w-4" />
-                )}
-                Ejecutar
-              </Button>
-            )}
+            <Button
+              onClick={() => handleExecute(0)}
+              disabled={selectedColumns.length === 0 || executeQuery.isPending}
+              className="gap-1.5"
+            >
+              {executeQuery.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="h-4 w-4" />
+              )}
+              Ejecutar
+            </Button>
           </>
         )}
 
