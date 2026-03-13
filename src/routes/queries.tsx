@@ -25,6 +25,7 @@ import type { AnyRoute } from '@tanstack/react-router'
 
 function QueriesPage() {
   const { user, can } = usePermissions()
+  const RESULTS_PAGE_SIZE = 20
   const { data: queries, isLoading } = useSavedQueries()
   const deleteQuery = useDeleteSavedQuery()
   const executeSaved = useExecuteSavedQuery()
@@ -35,9 +36,9 @@ function QueriesPage() {
   const canCreate = can('reports:create')
   const canEdit = can('reports:create')
 
-  function handleExecute(id: string) {
+  function handleExecute(id: string, offset = 0) {
     setExecutingId(id)
-    executeSaved.mutate(id, {
+    executeSaved.mutate({ id, offset, limit: RESULTS_PAGE_SIZE }, {
       onSuccess: (data) => {
         setResults({ id, data })
         setExecutingId(null)
@@ -259,9 +260,9 @@ function QueriesPage() {
                       <QueryResultsTable
                         data={results.data}
                         isLoading={false}
-                        offset={0}
+                        offset={results.data.offset}
                         limit={results.data.limit}
-                        onPageChange={() => {}}
+                        onPageChange={(newOffset) => handleExecute(q.id, newOffset)}
                       />
                     </div>
                   )}

@@ -56,8 +56,13 @@ async function request<T>(
   })
 
   const hasNoContent = response.status === 204 || response.headers.get('content-length') === '0'
-  const isJsonResponse = response.headers.get('content-type')?.includes('application/json')
-  const json = hasNoContent ? null : isJsonResponse ? await response.json() : null
+  const contentType = response.headers.get('content-type') ?? ''
+  const raw = hasNoContent ? '' : await response.text()
+  const json = raw && contentType.includes('application/json') ? JSON.parse(raw) : raw || null
+
+  if (response.status === 204) {
+    return undefined as T
+  }
 
   if (!response.ok) {
     if (response.status === 401 && path !== '/auth/login') {

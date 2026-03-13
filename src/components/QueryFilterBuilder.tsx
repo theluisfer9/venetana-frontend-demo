@@ -29,14 +29,31 @@ const OPERATORS = [
 
 export default function QueryFilterBuilder({ columns, filters, onChange }: Props) {
   const filterable = columns.filter((c) => c.is_filterable)
+  const getColumn = (columnName: string) =>
+    filterable.find((col) => col.column_name === columnName)
+  const isBooleanColumn = (columnName: string) => getColumn(columnName)?.data_type === 'BOOLEAN'
+  const getDefaultValueForColumn = (columnName: string) =>
+    isBooleanColumn(columnName) ? false : ''
 
   function addFilter() {
     if (filterable.length === 0) return
-    onChange([...filters, { column: filterable[0].column_name, op: 'eq', value: '' }])
+    const firstColumn = filterable[0].column_name
+    onChange([
+      ...filters,
+      { column: firstColumn, op: 'eq', value: getDefaultValueForColumn(firstColumn) },
+    ])
   }
 
   function updateFilter(index: number, patch: Partial<QueryFilter>) {
-    const updated = filters.map((f, i) => (i === index ? { ...f, ...patch } : f))
+    const updated = filters.map((f, i) => {
+      if (i !== index) return f
+
+      const nextFilter = { ...f, ...patch }
+      if (patch.column && patch.column !== f.column) {
+        nextFilter.value = getDefaultValueForColumn(patch.column)
+      }
+      return nextFilter
+    })
     onChange(updated)
   }
 
@@ -80,9 +97,24 @@ export default function QueryFilterBuilder({ columns, filters, onChange }: Props
           <Input
             value={String(filter.value)}
             onChange={(e) => updateFilter(i, { value: e.target.value })}
-            className="h-8 text-xs flex-1"
+            className={`h-8 text-xs flex-1 ${isBooleanColumn(filter.column) ? 'hidden' : ''}`}
             placeholder="Valor..."
           />
+
+          {isBooleanColumn(filter.column) && (
+            <Select
+              value={String(filter.value || 'false')}
+              onValueChange={(value) => updateFilter(i, { value: value === 'true' })}
+            >
+              <SelectTrigger className="h-8 text-xs flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">Verdadero</SelectItem>
+                <SelectItem value="false">Falso</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
 
           <Button variant="ghost" size="sm" onClick={() => removeFilter(i)} className="h-8 w-8 p-0">
             <X className="h-3.5 w-3.5" />

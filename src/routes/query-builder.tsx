@@ -32,6 +32,8 @@ import { toast } from 'sonner'
 import type { QueryFilter, QueryExecuteResponse, Aggregation } from '@/lib/query-builder-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
+type ResultMode = 'draft' | 'saved'
+
 function QueryBuilderPage() {
   const navigate = useNavigate()
   const { id: editId, view: viewOnly } = useSearch({ from: '/queries/new' }) as {
@@ -56,6 +58,7 @@ function QueryBuilderPage() {
   const [aggregations, setAggregations] = useState<Aggregation[]>([])
   const [offset, setOffset] = useState(0)
   const [results, setResults] = useState<QueryExecuteResponse | undefined>()
+  const [resultMode, setResultMode] = useState<ResultMode>('draft')
 
   // Save form state
   const [queryName, setQueryName] = useState('')
@@ -126,7 +129,13 @@ function QueryBuilderPage() {
     const coercedFilters = filters.map((f) => {
       const col = currentDs?.columns.find((c) => c.column_name === f.column)
       let value: unknown = f.value
-      if (col?.data_type === 'INTEGER' || col?.data_type === 'BOOLEAN') {
+      if (col?.data_type === 'BOOLEAN') {
+        if (typeof f.value === 'string') {
+          value = f.value === 'true'
+        } else {
+          value = Boolean(f.value)
+        }
+      } else if (col?.data_type === 'INTEGER') {
         value = Number(f.value)
       } else if (col?.data_type === 'FLOAT') {
         value = parseFloat(String(f.value))
@@ -147,6 +156,7 @@ function QueryBuilderPage() {
       },
       {
         onSuccess: (data) => {
+          setResultMode('draft')
           setResults(data)
           toast.success(`${data.total} registros encontrados`)
         },
@@ -155,10 +165,12 @@ function QueryBuilderPage() {
     )
   }
 
-  function handleExecuteSaved() {
+  function handleExecuteSaved(newOffset = 0) {
     if (!editId) return
-    executeSaved.mutate(editId, {
+    setOffset(newOffset)
+    executeSaved.mutate({ id: editId, offset: newOffset, limit }, {
       onSuccess: (data) => {
+        setResultMode('saved')
         setResults(data)
         toast.success(`${data.total} registros encontrados`)
       },
@@ -256,7 +268,7 @@ function QueryBuilderPage() {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={handleExecuteSaved}
+                onClick={() => handleExecuteSaved(0)}
                 disabled={executeSaved.isPending}
                 className="gap-1"
               >
@@ -573,7 +585,13 @@ function QueryBuilderPage() {
           isLoading={executeQuery.isPending || executeSaved.isPending}
           offset={offset}
           limit={limit}
-          onPageChange={(newOffset) => handleExecute(newOffset)}
+          onPageChange={(newOffset) => {
+            if (resultMode === 'saved' && editId) {
+              handleExecuteSaved(newOffset)
+              return
+            }
+            handleExecute(newOffset)
+          }}
         />
       </div>
     </div>

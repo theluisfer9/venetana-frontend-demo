@@ -45,8 +45,19 @@ export function useExecuteQuery() {
 
 export function useExecuteSavedQuery() {
   return useMutation({
-    mutationFn: (id: string) =>
-      apiClient.post<QueryExecuteResponse>(`/queries/saved/${id}/execute`, {}),
+    mutationFn: ({
+      id,
+      offset = 0,
+      limit = 20,
+    }: {
+      id: string
+      offset?: number
+      limit?: number
+    }) =>
+      apiClient.post<QueryExecuteResponse>(
+        `/queries/saved/${id}/execute?offset=${offset}&limit=${limit}`,
+        {},
+      ),
   })
 }
 
