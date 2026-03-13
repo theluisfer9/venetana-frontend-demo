@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { createRoute, redirect } from '@tanstack/react-router'
 import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
-import { useBeneficiarios, useBeneficiarioStats, useBeneficiarioDetail, useExportExcel, useExportCsv, useExportPdf } from '@/hooks/use-beneficiarios'
+import { useBeneficiarios, useBeneficiarioStats, useBeneficiarioDetail, useExportExcel, useExportCsv, useExportPdf, useMunicipiosActualizados } from '@/hooks/use-beneficiarios'
 import StatsBar from '@/components/StatsBar'
 import BeneficiarioFiltersPanel from '@/components/BeneficiarioFilters'
 import BeneficiarioTable from '@/components/BeneficiarioTable'
@@ -275,6 +275,7 @@ function BeneficiariosPage() {
 
   const { data, isLoading } = useBeneficiarios(filters, offset, limit)
   const { data: stats, isLoading: statsLoading } = useBeneficiarioStats(filters)
+  const { data: municipiosActualizados } = useMunicipiosActualizados()
   const exportExcel = useExportExcel(filters)
   const exportCsv = useExportCsv(filters)
   const exportPdf = useExportPdf(filters)
@@ -344,6 +345,8 @@ function BeneficiariosPage() {
         <BeneficiarioFiltersPanel
           onApply={handleApplyFilters}
           currentFilters={filters}
+          recentMunicipioCodes={municipiosActualizados?.items.map((item) => item.code) ?? []}
+          recentMunicipiosCount={municipiosActualizados?.total ?? 0}
         />
 
         {/* Content area */}

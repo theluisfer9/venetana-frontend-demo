@@ -10,6 +10,15 @@ export interface MunicipioItem {
   name: string
 }
 
+export interface MunicipioActualizadoItem {
+  code: string
+  name: string
+  departamento: string
+  departamento_codigo: string
+  fase_estado: string
+  ultima_actualizacion: string
+}
+
 export interface LugarPobladoItem {
   code: string
   name: string
@@ -63,6 +72,8 @@ export interface BeneficiarioFilters {
   buscar?: string
   anio?: number
   fase?: string
+  solo_recientes?: boolean
+  municipios_recientes_codigos?: string
 }
 
 // ── Beneficiario resumen (lista) ─────────────────────────────────────
@@ -260,4 +271,11 @@ export interface DashboardStats {
   hogares_no_pobres: number
   por_departamento: DepartamentoCount[]
   inseguridad_alimentaria: InseguridadCount[]
+}
+
+export interface MunicipiosActualizadosResponse {
+  last_checked_at: string | null
+  checked_at: string
+  total: number
+  items: MunicipioActualizadoItem[]
 }

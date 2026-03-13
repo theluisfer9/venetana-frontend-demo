@@ -17,11 +17,18 @@ import { Search, FilterX, ChevronDown, ChevronUp, SlidersHorizontal } from 'luci
 interface Props {
   onApply: (filters: Filters) => void
   currentFilters: Filters
+  recentMunicipioCodes?: string[]
+  recentMunicipiosCount?: number
 }
 
 const EMPTY_VALUE = '__none__'
 
-export default function BeneficiarioFilters({ onApply, currentFilters }: Props) {
+export default function BeneficiarioFilters({
+  onApply,
+  currentFilters,
+  recentMunicipioCodes = [],
+  recentMunicipiosCount = 0,
+}: Props) {
   const { data: catalogos } = useCatalogos()
   const [expanded, setExpanded] = useState(false)
 
@@ -53,6 +60,7 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
   const [conMenoresSinEscuela, setConMenoresSinEscuela] = useState(currentFilters.con_menores_sin_escuela ?? false)
   const [sinEmpleo, setSinEmpleo] = useState(currentFilters.sin_empleo ?? false)
   const [buscar, setBuscar] = useState(currentFilters.buscar ?? '')
+  const [soloRecientes, setSoloRecientes] = useState(currentFilters.solo_recientes ?? false)
 
   const { data: municipios } = useMunicipios(departamento || undefined)
   const { data: lugaresPoblados } = useLugaresPoblados(municipio || undefined)
@@ -86,7 +94,7 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
   ].filter(Boolean).length + [
     tieneMenores5, tieneAdultosMayores, tieneEmbarazadas, tieneDiscapacidad,
     tieneInternet, tieneComputadora, tieneRefrigerador, conHacinamiento,
-    conAnalfabetismo, conMenoresSinEscuela, sinEmpleo,
+    conAnalfabetismo, conMenoresSinEscuela, sinEmpleo, soloRecientes,
   ].filter(Boolean).length
 
   function handleApply() {
@@ -119,6 +127,10 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     if (conMenoresSinEscuela) filters.con_menores_sin_escuela = true
     if (sinEmpleo) filters.sin_empleo = true
     if (buscar.trim()) filters.buscar = buscar.trim()
+    if (soloRecientes) {
+      filters.solo_recientes = true
+      filters.municipios_recientes_codigos = recentMunicipioCodes.join(',')
+    }
     onApply(filters)
   }
 
@@ -151,6 +163,7 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
     setConMenoresSinEscuela(false)
     setSinEmpleo(false)
     setBuscar('')
+    setSoloRecientes(false)
     onApply({})
   }
 
@@ -248,6 +261,24 @@ export default function BeneficiarioFilters({ onApply, currentFilters }: Props) 
                   ))}
                 </SelectContent>
               </Select>
+              <div className="flex items-start gap-2 rounded-md border border-dashed border-blue-200 bg-blue-50 px-2.5 py-2">
+                <Checkbox
+                  checked={soloRecientes}
+                  onCheckedChange={(checked) => setSoloRecientes(checked === true)}
+                  disabled={recentMunicipiosCount === 0}
+                  className="mt-0.5"
+                />
+                <div className="space-y-0.5">
+                  <Label className="text-xs font-medium text-blue-900">
+                    Solo municipios actualizados
+                  </Label>
+                  <p className="text-[11px] text-blue-700">
+                    {recentMunicipiosCount > 0
+                      ? `${recentMunicipiosCount} municipios con cambios desde tu última consulta`
+                      : 'No hay municipios con cambios recientes disponibles'}
+                  </p>
+                </div>
+              </div>
             </div>
 
             {/* Pobreza */}

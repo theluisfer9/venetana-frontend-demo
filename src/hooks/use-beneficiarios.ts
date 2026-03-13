@@ -12,6 +12,7 @@ import type {
   BeneficiarioFilters,
   PersonaResumen,
   ViviendaDetalle,
+  MunicipiosActualizadosResponse,
 } from '@/lib/beneficiario-types'
 
 function buildQueryString(filters: BeneficiarioFilters, extra?: Record<string, string | number>): string {
@@ -104,6 +105,18 @@ export function useDashboardStats() {
   return useQuery({
     queryKey: ['beneficiarios', 'dashboard'],
     queryFn: () => apiClient.get<DashboardStats>('/beneficiarios/dashboard'),
+    enabled: isAuthenticated(),
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useMunicipiosActualizados() {
+  return useQuery({
+    queryKey: ['beneficiarios', 'municipios-actualizados'],
+    queryFn: () =>
+      apiClient.get<MunicipiosActualizadosResponse>(
+        '/beneficiarios/municipios/actualizados'
+      ),
     enabled: isAuthenticated(),
     staleTime: 5 * 60 * 1000,
   })
