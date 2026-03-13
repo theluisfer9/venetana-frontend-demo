@@ -9,6 +9,13 @@ export interface DashboardClasificacionCount {
   cantidad: number
 }
 
+export interface DashboardClasificacionDepartamentoCount {
+  departamento: string
+  codigo: string
+  clasificacion: string
+  cantidad: number
+}
+
 export interface DashboardInseguridadCount {
   nivel: string
   cantidad: number
@@ -49,9 +56,26 @@ export interface AdminDashboardStats {
   promedio_pmt: number
   promedio_nbi: number
   por_ipm_clasificacion: DashboardClasificacionCount[]
+  por_nbi_clasificacion: DashboardClasificacionCount[]
+  por_pmt_clasificacion: DashboardClasificacionCount[]
+  ipm_por_departamento: DashboardClasificacionDepartamentoCount[]
+  pmt_por_departamento: DashboardClasificacionDepartamentoCount[]
+  nbi_por_departamento: DashboardClasificacionDepartamentoCount[]
   personas_por_sexo: DashboardSexoCount[]
   por_departamento: DashboardDepartamentoCount[]
   inseguridad_alimentaria: DashboardInseguridadCount[]
+}
+
+export interface DashboardBonos {
+  total_intervenciones: number
+  [key: string]: number
+}
+
+export interface DashboardBonosDepartamento {
+  departamento: string
+  codigo: string
+  total_intervenciones: number
+  [key: string]: string | number
 }
 
 export interface InstitutionalDashboardStats {
@@ -68,13 +92,18 @@ export interface InstitutionalDashboardStats {
   promedio_pmt: number
   promedio_nbi: number
   por_ipm_clasificacion: DashboardClasificacionCount[]
+  por_nbi_clasificacion: DashboardClasificacionCount[]
+  por_pmt_clasificacion: DashboardClasificacionCount[]
+  ipm_por_departamento: DashboardClasificacionDepartamentoCount[]
+  pmt_por_departamento: DashboardClasificacionDepartamentoCount[]
+  nbi_por_departamento: DashboardClasificacionDepartamentoCount[]
   personas_por_sexo: DashboardSexoCount[]
   por_departamento: DashboardDepartamentoCount[]
   inseguridad_alimentaria: DashboardInseguridadCount[]
   total_consultas: number
   total_fuentes_datos: number
-  bonos: Record<string, Record<string, number>>
-  bonos_por_departamento: Record<string, { departamento: string; codigo: string; [key: string]: string | number }[]>
+  bonos: DashboardBonos
+  bonos_por_departamento: DashboardBonosDepartamento[]
 }
 
 export type UnifiedDashboardStats = AdminDashboardStats | InstitutionalDashboardStats

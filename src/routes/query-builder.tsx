@@ -7,6 +7,7 @@ import {
   useUpdateSavedQuery,
   useSavedQueryDetail,
   useExecuteSavedQuery,
+  useExportQueryExecute,
   useInstitutions,
 } from '@/hooks/use-query-builder'
 import { useDatasources, useDatasource } from '@/hooks/use-datasources'
@@ -27,7 +28,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { ArrowLeft, Play, Save, Loader2, Pencil } from 'lucide-react'
+import { ArrowLeft, Play, Save, Loader2, Pencil, FileSpreadsheet, FileDown, FileText } from 'lucide-react'
 import { toast } from 'sonner'
 import type { QueryFilter, QueryExecuteResponse, Aggregation } from '@/lib/query-builder-types'
 import type { AnyRoute } from '@tanstack/react-router'
@@ -49,6 +50,7 @@ function QueryBuilderPage() {
   const executeSaved = useExecuteSavedQuery()
   const saveQuery = useSaveQuery()
   const updateQuery = useUpdateSavedQuery()
+  const exportQuery = useExportQueryExecute()
 
   // Query builder state
   const [datasourceId, setDatasourceId] = useState('')
@@ -161,6 +163,36 @@ function QueryBuilderPage() {
           toast.success(`${data.total} registros encontrados`)
         },
         onError: () => toast.error('Error al ejecutar la consulta'),
+      },
+    )
+  }
+
+  function handleExport(formato: 'csv' | 'excel' | 'pdf') {
+    if (!datasourceId || selectedColumns.length === 0) return
+    const coercedFilters = filters.map((f) => {
+      const col = currentDs?.columns.find((c) => c.column_name === f.column)
+      let value: unknown = f.value
+      if (col?.data_type === 'BOOLEAN') {
+        value = typeof f.value === 'string' ? f.value === 'true' : Boolean(f.value)
+      } else if (col?.data_type === 'INTEGER') {
+        value = Number(f.value)
+      } else if (col?.data_type === 'FLOAT') {
+        value = parseFloat(String(f.value))
+      }
+      return { ...f, value }
+    })
+
+    exportQuery.mutate(
+      {
+        datasource_id: datasourceId,
+        columns: selectedColumns,
+        filters: coercedFilters as QueryFilter[],
+        group_by: groupBy.length > 0 ? groupBy : undefined,
+        aggregations: aggregations.length > 0 ? aggregations : undefined,
+        formato,
+      },
+      {
+        onError: () => toast.error('Error al exportar la consulta'),
       },
     )
   }
@@ -564,18 +596,60 @@ function QueryBuilderPage() {
               </Card>
             )}
 
-            <Button
-              onClick={() => handleExecute(0)}
-              disabled={selectedColumns.length === 0 || executeQuery.isPending}
-              className="gap-1.5"
-            >
-              {executeQuery.isPending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={() => handleExecute(0)}
+                disabled={selectedColumns.length === 0 || executeQuery.isPending}
+                className="gap-1.5"
+              >
+                {executeQuery.isPending ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Play className="h-4 w-4" />
+                )}
+                Ejecutar
+              </Button>
+
+              {exportQuery.isPending ? (
+                <div className="flex items-center gap-2 border rounded-lg px-5 py-2 text-sm text-gray-500">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Descargando...
+                </div>
               ) : (
-                <Play className="h-4 w-4" />
+                <div className="flex items-center border rounded-lg overflow-hidden">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-green-50 hover:text-green-700"
+                    onClick={() => handleExport('excel')}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    <FileSpreadsheet className="h-3.5 w-3.5" />
+                    Excel
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-blue-50 hover:text-blue-700"
+                    onClick={() => handleExport('csv')}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    <FileDown className="h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-1 text-xs h-9 rounded-none px-3 hover:bg-red-50 hover:text-red-700"
+                    onClick={() => handleExport('pdf')}
+                    disabled={selectedColumns.length === 0}
+                  >
+                    <FileText className="h-3.5 w-3.5" />
+                    PDF
+                  </Button>
+                </div>
               )}
-              Ejecutar
-            </Button>
+            </div>
           </>
         )}
 

@@ -1,15 +1,13 @@
 import { useState } from 'react'
 import { createRoute, redirect, Link } from '@tanstack/react-router'
 import { isAuthenticated, usePermissions } from '@/hooks/use-auth'
-import { useSavedQueries, useDeleteSavedQuery, useExecuteSavedQuery } from '@/hooks/use-query-builder'
-import QueryResultsTable from '@/components/QueryResultsTable'
+import { useSavedQueries, useDeleteSavedQuery } from '@/hooks/use-query-builder'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Badge } from '@/components/ui/badge'
 import {
   Plus,
-  Play,
   Trash2,
   Database,
   Pencil,
@@ -18,44 +16,26 @@ import {
   Share2,
   Building2,
   Eye,
+  Calendar,
+  Columns3,
+  Filter,
 } from 'lucide-react'
 import { toast } from 'sonner'
-import type { QueryExecuteResponse } from '@/lib/query-builder-types'
 import type { AnyRoute } from '@tanstack/react-router'
 
 function QueriesPage() {
   const { user, can } = usePermissions()
-  const RESULTS_PAGE_SIZE = 20
   const { data: queries, isLoading } = useSavedQueries()
   const deleteQuery = useDeleteSavedQuery()
-  const executeSaved = useExecuteSavedQuery()
-  const [results, setResults] = useState<{ id: string; data: QueryExecuteResponse } | null>(null)
-  const [executingId, setExecutingId] = useState<string | null>(null)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const canCreate = can('reports:create')
   const canEdit = can('reports:create')
 
-  function handleExecute(id: string, offset = 0) {
-    setExecutingId(id)
-    executeSaved.mutate({ id, offset, limit: RESULTS_PAGE_SIZE }, {
-      onSuccess: (data) => {
-        setResults({ id, data })
-        setExecutingId(null)
-        toast.success(`${data.total} registros encontrados`)
-      },
-      onError: () => {
-        setExecutingId(null)
-        toast.error('Error al ejecutar la consulta')
-      },
-    })
-  }
-
   function handleDelete(id: string) {
     deleteQuery.mutate(id, {
       onSuccess: () => {
         setConfirmDeleteId(null)
-        if (results?.id === id) setResults(null)
         toast.success('Consulta eliminada')
       },
       onError: () => toast.error('Error al eliminar la consulta'),
@@ -68,7 +48,7 @@ function QueriesPage() {
         <div className="max-w-5xl mx-auto space-y-4">
           <Skeleton className="h-10 w-48" />
           {Array.from({ length: 3 }).map((_, i) => (
-            <Skeleton key={i} className="h-20 rounded-lg" />
+            <Skeleton key={i} className="h-28 rounded-lg" />
           ))}
         </div>
       </div>
@@ -90,6 +70,11 @@ function QueriesPage() {
                 {user.institution_name}
               </p>
             )}
+            {queries && queries.length > 0 && (
+              <p className="text-xs text-gray-400 mt-1">
+                {queries.length} consulta{queries.length !== 1 ? 's' : ''} guardada{queries.length !== 1 ? 's' : ''}
+              </p>
+            )}
           </div>
           {canCreate && (
             <Link to="/queries/new">
@@ -104,11 +89,18 @@ function QueriesPage() {
         {/* ── Empty state ── */}
         {!queries || queries.length === 0 ? (
           <Card>
-            <CardContent className="p-8 text-center">
-              <Database className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <p className="text-gray-500 mb-4">
+            <CardContent className="p-12 text-center">
+              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                <Database className="h-8 w-8 text-gray-400" />
+              </div>
+              <p className="text-gray-600 font-medium mb-1">
                 {canCreate
                   ? 'No tienes consultas guardadas'
+                  : 'No hay consultas disponibles'}
+              </p>
+              <p className="text-sm text-gray-400 mb-5">
+                {canCreate
+                  ? 'Crea tu primera consulta para comenzar a exportar datos'
                   : 'No hay consultas disponibles para tu institución'}
               </p>
               {canCreate && (
@@ -124,12 +116,16 @@ function QueriesPage() {
         ) : (
           <div className="space-y-3">
             {queries.map((q) => (
-              <Card key={q.id} className="hover:shadow-sm transition-shadow">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-gray-900">{q.name}</p>
+              <Card
+                key={q.id}
+                className="group hover:shadow-md transition-all duration-200 border-gray-200"
+              >
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    {/* ── Info ── */}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-gray-900 text-base">{q.name}</p>
                         {q.is_shared && (
                           <Badge
                             variant="secondary"
@@ -149,44 +145,41 @@ function QueriesPage() {
                           </Badge>
                         )}
                       </div>
-                      <p className="text-xs text-gray-500 mt-0.5">
-                        {q.datasource_name} &middot; {q.column_count} columnas &middot;{' '}
-                        {q.filter_count} filtros
-                        {q.created_at && (
-                          <>
-                            {' '}
-                            &middot; {new Date(q.created_at).toLocaleDateString('es-GT')}
-                          </>
-                        )}
-                      </p>
+
                       {q.description && (
-                        <p className="text-xs text-gray-400 mt-1 line-clamp-1">
+                        <p className="text-sm text-gray-500 line-clamp-1">
                           {q.description}
                         </p>
                       )}
+
+                      <div className="flex items-center gap-4 text-xs text-gray-400">
+                        <span className="flex items-center gap-1">
+                          <Database className="h-3 w-3" />
+                          {q.datasource_name}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Columns3 className="h-3 w-3" />
+                          {q.column_count} columnas
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Filter className="h-3 w-3" />
+                          {q.filter_count} filtros
+                        </span>
+                        {q.created_at && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {new Date(q.created_at).toLocaleDateString('es-GT')}
+                          </span>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="flex gap-2 ml-4">
-                      {/* Ejecutar: visible para todos */}
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-1"
-                        onClick={() => handleExecute(q.id)}
-                        disabled={executingId === q.id}
-                      >
-                        {executingId === q.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : (
-                          <Play className="h-3.5 w-3.5" />
-                        )}
-                        Ejecutar
-                      </Button>
-
+                    {/* ── Actions ── */}
+                    <div className="flex items-center gap-1.5 shrink-0">
                       {/* Ver detalle: solo si no puede editar */}
                       {!canEdit && (
                         <Link to="/queries/new" search={{ id: q.id, view: true }}>
-                          <Button variant="outline" size="sm" className="gap-1">
+                          <Button variant="outline" size="sm" className="gap-1 h-8">
                             <Eye className="h-3.5 w-3.5" />
                             Ver
                           </Button>
@@ -196,7 +189,7 @@ function QueriesPage() {
                       {/* Editar: solo con permiso */}
                       {canEdit && (
                         <Link to="/queries/new" search={{ id: q.id }}>
-                          <Button variant="outline" size="sm" className="gap-1">
+                          <Button variant="outline" size="sm" className="gap-1 h-8">
                             <Pencil className="h-3.5 w-3.5" />
                             Editar
                           </Button>
@@ -211,6 +204,7 @@ function QueriesPage() {
                               <Button
                                 variant="destructive"
                                 size="sm"
+                                className="h-8"
                                 onClick={() => handleDelete(q.id)}
                                 disabled={deleteQuery.isPending}
                               >
@@ -223,6 +217,7 @@ function QueriesPage() {
                               <Button
                                 variant="ghost"
                                 size="sm"
+                                className="h-8"
                                 onClick={() => setConfirmDeleteId(null)}
                               >
                                 <X className="h-3.5 w-3.5" />
@@ -232,6 +227,7 @@ function QueriesPage() {
                             <Button
                               variant="ghost"
                               size="sm"
+                              className="h-8 opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => setConfirmDeleteId(q.id)}
                             >
                               <Trash2 className="h-3.5 w-3.5 text-red-500" />
@@ -241,31 +237,6 @@ function QueriesPage() {
                       )}
                     </div>
                   </div>
-
-                  {/* Resultados inline */}
-                  {results?.id === q.id && (
-                    <div className="mt-4 border-t pt-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-xs font-medium text-gray-500">
-                          Resultados ({results.data.total} registros)
-                        </p>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setResults(null)}
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                      <QueryResultsTable
-                        data={results.data}
-                        isLoading={false}
-                        offset={results.data.offset}
-                        limit={results.data.limit}
-                        onPageChange={(newOffset) => handleExecute(q.id, newOffset)}
-                      />
-                    </div>
-                  )}
                 </CardContent>
               </Card>
             ))}

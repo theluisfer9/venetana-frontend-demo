@@ -222,9 +222,9 @@ export default function BeneficiarioFilters({
         <div className="border-t px-3 pb-3 pt-2">
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-3">
 
-            {/* Geograficos */}
+            {/* Geográficos */}
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Geograficos</Label>
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Geográficos</Label>
               <Select value={selectValue(departamento)} onValueChange={onSelectChange(setDepartamento)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Departamento" /></SelectTrigger>
                 <SelectContent>
@@ -317,9 +317,9 @@ export default function BeneficiarioFilters({
               </div>
             </div>
 
-            {/* Demograficos */}
+            {/* Demográficos */}
             <div className="space-y-1.5">
-              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Demograficos</Label>
+              <Label className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider">Demográficos</Label>
               <Select value={selectValue(sexoJefe)} onValueChange={onSelectChange(setSexoJefe)}>
                 <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Sexo jefe" /></SelectTrigger>
                 <SelectContent>

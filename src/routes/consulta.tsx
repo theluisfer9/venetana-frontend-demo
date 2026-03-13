@@ -53,7 +53,7 @@ function ConsultaDetailPanel({
       <CardContent>
         <div className="space-y-4">
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Ubicacion</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Ubicación</p>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-gray-500">Departamento</p>
@@ -75,7 +75,7 @@ function ConsultaDetailPanel({
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Composicion del Hogar</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Composición del Hogar</p>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-gray-500">Total Personas</p>
@@ -89,14 +89,14 @@ function ConsultaDetailPanel({
           </div>
 
           <div>
-            <p className="text-sm font-semibold text-gray-700 mb-2">Indice de Pobreza Multidimensional</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">Índice de Pobreza Multidimensional</p>
             <div className="grid grid-cols-2 gap-3 text-sm">
               <div>
                 <p className="text-gray-500">IPM</p>
                 <p className="font-mono">{(data.ipm_gt ?? 0).toFixed(2)}</p>
               </div>
               <div>
-                <p className="text-gray-500">Clasificacion</p>
+                <p className="text-gray-500">Clasificación</p>
                 <p className="font-medium">{data.ipm_gt_clasificacion}</p>
               </div>
             </div>
@@ -203,7 +203,7 @@ function ConsultaPage() {
               <Users className="h-4 w-4 text-orange-600" />
               <span className="font-semibold">
                 {data.items.reduce((sum, item) => sum + item.numero_personas, 0).toLocaleString()}
-              </span> personas (en pagina)
+              </span> personas (en página)
             </div>
           </div>
         )}

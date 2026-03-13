@@ -36,11 +36,11 @@ export default function PersonasList({ hogarId }: { hogarId: number }) {
             <TableRow>
               <TableHead className="w-10">#</TableHead>
               <TableHead>Nombre</TableHead>
-              <TableHead>Genero</TableHead>
+              <TableHead>Género</TableHead>
               <TableHead>Edad</TableHead>
               <TableHead>Parentesco</TableHead>
               <TableHead>Estado Civil</TableHead>
-              <TableHead>Educacion</TableHead>
+              <TableHead>Educación</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -78,7 +78,7 @@ export default function PersonasList({ hogarId }: { hogarId: number }) {
         {personas.map((p) => {
           const dificultades = [
             p.dificultad_ver && `Ver: ${p.dificultad_ver}`,
-            p.dificultad_oir && `Oir: ${p.dificultad_oir}`,
+            p.dificultad_oir && `Oír: ${p.dificultad_oir}`,
             p.dificultad_caminar && `Caminar: ${p.dificultad_caminar}`,
             p.dificultad_recordar && `Recordar: ${p.dificultad_recordar}`,
             p.dificultad_cuidado_personal && `Cuidado: ${p.dificultad_cuidado_personal}`,

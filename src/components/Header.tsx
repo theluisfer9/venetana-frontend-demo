@@ -28,14 +28,14 @@ export default function Header() {
         <button
           onClick={() => setIsOpen(true)}
           className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
-          aria-label="Abrir menu"
+          aria-label="Abrir menú"
         >
           <Menu size={24} />
         </button>
         <h1 className="ml-4 text-xl font-semibold tracking-tight">
           <Link to="/" className="flex items-center gap-2">
             <span className="text-blue-400">Ventana</span>
-            <span>Magica</span>
+            <span>Mágica</span>
           </Link>
         </h1>
       </header>
@@ -55,12 +55,12 @@ export default function Header() {
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-700">
           <h2 className="text-xl font-bold">
-            <span className="text-blue-400">Ventana</span> Magica
+            <span className="text-blue-400">Ventana</span> Mágica
           </h2>
           <button
             onClick={() => setIsOpen(false)}
             className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
-            aria-label="Cerrar menu"
+            aria-label="Cerrar menú"
           >
             <X size={24} />
           </button>
@@ -174,7 +174,7 @@ export default function Header() {
                   className={`${linkClass} w-full text-left text-red-400 hover:text-red-300`}
                 >
                   <LogOut size={20} />
-                  <span className="font-medium">Cerrar sesion</span>
+                  <span className="font-medium">Cerrar sesión</span>
                 </button>
               </div>
             </>
@@ -186,7 +186,7 @@ export default function Header() {
               activeProps={{ className: activeLinkClass }}
             >
               <LogIn size={20} />
-              <span className="font-medium">Iniciar sesion</span>
+              <span className="font-medium">Iniciar sesión</span>
             </Link>
           )}
         </nav>

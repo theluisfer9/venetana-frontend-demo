@@ -5,6 +5,8 @@ import type {
   AvailableDataSource,
   QueryExecuteRequest,
   QueryExecuteResponse,
+  QueryFilter,
+  Aggregation,
   SavedQueryListItem,
   SavedQueryDetail,
   SavedQueryCreateBody,
@@ -108,6 +110,51 @@ export function useDeleteSavedQuery() {
     mutationFn: (id: string) => apiClient.delete(`/queries/saved/${id}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['queries', 'saved'] })
+    },
+  })
+}
+
+// ── Export saved query ──
+
+const FORMAT_EXT: Record<string, string> = {
+  excel: 'xlsx',
+  csv: 'csv',
+  pdf: 'pdf',
+}
+
+export function useExportSavedQuery() {
+  return useMutation({
+    mutationFn: ({ id, formato }: { id: string; formato: 'csv' | 'excel' | 'pdf' }) => {
+      const ext = FORMAT_EXT[formato] ?? formato
+      return apiClient.download(
+        `/queries/saved/${id}/export?formato=${formato}`,
+        `consulta_${id}_${new Date().toISOString().slice(0, 10)}.${ext}`,
+      )
+    },
+  })
+}
+
+export function useExportQueryExecute() {
+  return useMutation({
+    mutationFn: ({
+      formato,
+      ...body
+    }: {
+      datasource_id: string
+      columns: string[]
+      filters: QueryFilter[]
+      group_by?: string[]
+      aggregations?: Aggregation[]
+      offset?: number
+      limit?: number
+      formato: 'csv' | 'excel' | 'pdf'
+    }) => {
+      const ext = FORMAT_EXT[formato] ?? formato
+      return apiClient.downloadPost(
+        `/queries/execute/export?formato=${formato}`,
+        { offset: 0, limit: 50000, ...body },
+        `consulta_${new Date().toISOString().slice(0, 10)}.${ext}`,
+      )
     },
   })
 }

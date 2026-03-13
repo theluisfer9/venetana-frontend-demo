@@ -109,10 +109,52 @@ async function download(path: string, filename: string): Promise<void> {
   }
 
   const blob = await response.blob()
+  const disposition = response.headers.get('Content-Disposition')
+  const serverFilename = disposition?.split('filename="')[1]?.replace('"', '')
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = filename
+  a.download = serverFilename || filename
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
+async function downloadPost(path: string, body: unknown, filename: string): Promise<void> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  }
+
+  const token = getAccessToken()
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`
+  }
+
+  const response = await fetch(`${BASE_URL}${path}`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(body),
+  })
+
+  if (!response.ok) {
+    if (response.status === 401) {
+      clearTokens()
+      if (!window.location.pathname.startsWith('/login')) {
+        window.location.href = '/login'
+      }
+      throw new ApiError(401, 'Sesión expirada')
+    }
+    throw new ApiError(response.status, 'Error al descargar archivo')
+  }
+
+  const blob = await response.blob()
+  const disposition = response.headers.get('Content-Disposition')
+  const serverFilename = disposition?.split('filename="')[1]?.replace('"', '')
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = serverFilename || filename
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
@@ -125,4 +167,5 @@ export const apiClient = {
   put: <T>(path: string, body?: unknown) => request<T>('PUT', path, body),
   delete: <T>(path: string) => request<T>('DELETE', path),
   download,
+  downloadPost,
 }

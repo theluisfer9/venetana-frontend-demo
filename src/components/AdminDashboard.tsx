@@ -1,4 +1,4 @@
-import { Building2, Map, MapPinned, Users, House, UsersRound, Download, CircleDashed, CircleCheckBig, Landmark, UserRound, Scale, ShieldAlert } from 'lucide-react'
+import { Building2, Map as MapIcon, MapPinned, Users, House, UsersRound, Download, CircleDashed, CircleCheckBig, Landmark, UserRound, Scale, ShieldAlert } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
@@ -25,6 +25,7 @@ type SummaryMetric = {
 const COLORS_PIE = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
 const COLORS_INSEG = ['#22c55e', '#facc15', '#f97316', '#ef4444']
 const COLORS_SEXO = ['#6366f1', '#ec4899']
+const COLORS_STACKED = ['#ef4444', '#f59e0b', '#10b981', '#6366f1', '#8b5cf6', '#ec4899']
 
 function formatNumber(value: number | undefined) {
   return (value ?? 0).toLocaleString()
@@ -60,6 +61,96 @@ function PieLabel({ cx, cy, midAngle, innerRadius, outerRadius, percent, name }:
   )
 }
 
+function buildStackedDeptoData(
+  raw: { departamento: string; codigo: string; clasificacion: string; cantidad: number }[],
+) {
+  const byDepto = new Map<string, Record<string, number>>()
+  const clasifs = new Set<string>()
+
+  for (const r of raw) {
+    clasifs.add(r.clasificacion)
+    const existing = byDepto.get(r.departamento) ?? {}
+    existing[r.clasificacion] = (existing[r.clasificacion] ?? 0) + r.cantidad
+    byDepto.set(r.departamento, existing)
+  }
+
+  const data = Array.from(byDepto.entries())
+    .map(([name, vals]) => ({ name, ...vals }))
+    .sort((a, b) => {
+      const totalA = Object.values(a).filter((v): v is number => typeof v === 'number').reduce((s, v) => s + v, 0)
+      const totalB = Object.values(b).filter((v): v is number => typeof v === 'number').reduce((s, v) => s + v, 0)
+      return totalB - totalA
+    })
+    .slice(0, 10)
+
+  return { data, classifications: Array.from(clasifs) }
+}
+
+function ClassificationPie({ title, description, data, colors }: {
+  title: string; description: string; data: { name: string; value: number }[]; colors: string[]
+}) {
+  if (data.length === 0) {
+    return (
+      <Card className="border-slate-200">
+        <CardHeader>
+          <CardTitle className="text-base">{title}</CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-center h-[250px] text-sm text-slate-400">
+          Sin datos disponibles
+        </CardContent>
+      </Card>
+    )
+  }
+  return (
+    <Card className="border-slate-200">
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={250}>
+          <PieChart>
+            <Pie data={data} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value" label={PieLabel}>
+              {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+            </Pie>
+            <Tooltip formatter={(v: number) => formatNumber(v)} />
+          </PieChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  )
+}
+
+function StackedDeptoChart({ title, description, raw }: {
+  title: string; description: string; raw: { departamento: string; codigo: string; clasificacion: string; cantidad: number }[]
+}) {
+  if (!raw || raw.length === 0) return null
+  const { data, classifications } = buildStackedDeptoData(raw)
+  return (
+    <Card className="border-slate-200">
+      <CardHeader>
+        <CardTitle className="text-base">{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
+      </CardHeader>
+      <CardContent>
+        <ResponsiveContainer width="100%" height={Math.max(data.length * 36, 200)}>
+          <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis type="number" tick={{ fontSize: 11, fill: '#64748b' }} tickFormatter={(v) => v.toLocaleString()} />
+            <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 11, fill: '#475569' }} />
+            <Tooltip content={<CustomTooltip />} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            {classifications.map((c, i) => (
+              <Bar key={c} dataKey={c} name={c} stackId="stack" fill={COLORS_STACKED[i % COLORS_STACKED.length]} radius={i === classifications.length - 1 ? [0, 4, 4, 0] : undefined} />
+            ))}
+          </BarChart>
+        </ResponsiveContainer>
+      </CardContent>
+    </Card>
+  )
+}
+
 export default function AdminDashboard({ stats, isLoading }: Props) {
   if (isLoading) {
     return (
@@ -82,73 +173,17 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
   if (!stats) return null
 
   const summaryMetrics: SummaryMetric[] = [
-    {
-      key: 'instituciones',
-      label: 'Instituciones',
-      value: stats.total_instituciones,
-      description: 'Instituciones activas en el sistema',
-      icon: Building2,
-      tone: 'bg-sky-50 text-sky-700',
-    },
-    {
-      key: 'usuarios',
-      label: 'Usuarios',
-      value: stats.total_usuarios,
-      description: 'Usuarios activos con acceso',
-      icon: Users,
-      tone: 'bg-emerald-50 text-emerald-700',
-    },
-    {
-      key: 'consultas',
-      label: 'Consultas guardadas',
-      value: stats.total_consultas_guardadas,
-      description: 'Consultas registradas en el sistema',
-      icon: Download,
-      tone: 'bg-amber-50 text-amber-700',
-    },
-    {
-      key: 'hogares',
-      label: 'Hogares',
-      value: stats.total_hogares,
-      description: 'Hogares visibles en el dashboard admin',
-      icon: House,
-      tone: 'bg-rose-50 text-rose-700',
-    },
-    {
-      key: 'personas',
-      label: 'Personas',
-      value: stats.total_personas,
-      description: 'Personas agregadas en la cobertura total',
-      icon: UsersRound,
-      tone: 'bg-violet-50 text-violet-700',
-    },
-    {
-      key: 'departamentos',
-      label: 'Departamentos',
-      value: stats.departamentos_cubiertos,
-      description: 'Cobertura geográfica por departamento',
-      icon: Map,
-      tone: 'bg-cyan-50 text-cyan-700',
-    },
-    {
-      key: 'municipios',
-      label: 'Municipios',
-      value: stats.municipios_cubiertos,
-      description: 'Cobertura geográfica por municipio',
-      icon: MapPinned,
-      tone: 'bg-lime-50 text-lime-700',
-    },
-    {
-      key: 'lugares',
-      label: 'Lugares poblados',
-      value: stats.lugares_poblados,
-      description: 'Lugares poblados identificados',
-      icon: Landmark,
-      tone: 'bg-orange-50 text-orange-700',
-    },
+    { key: 'instituciones', label: 'Instituciones', value: stats.total_instituciones, description: 'Instituciones activas en el sistema', icon: Building2, tone: 'bg-sky-50 text-sky-700' },
+    { key: 'usuarios', label: 'Usuarios', value: stats.total_usuarios, description: 'Usuarios activos con acceso', icon: Users, tone: 'bg-emerald-50 text-emerald-700' },
+    { key: 'consultas', label: 'Consultas guardadas', value: stats.total_consultas_guardadas, description: 'Consultas registradas en el sistema', icon: Download, tone: 'bg-amber-50 text-amber-700' },
+    { key: 'hogares', label: 'Hogares', value: stats.total_hogares, description: 'Hogares visibles en el dashboard admin', icon: House, tone: 'bg-rose-50 text-rose-700' },
+    { key: 'personas', label: 'Personas', value: stats.total_personas, description: 'Personas agregadas en la cobertura total', icon: UsersRound, tone: 'bg-violet-50 text-violet-700' },
+    { key: 'departamentos', label: 'Departamentos', value: stats.departamentos_cubiertos, description: 'Cobertura geográfica por departamento', icon: MapIcon, tone: 'bg-cyan-50 text-cyan-700' },
+    { key: 'municipios', label: 'Municipios', value: stats.municipios_cubiertos, description: 'Cobertura geográfica por municipio', icon: MapPinned, tone: 'bg-lime-50 text-lime-700' },
+    { key: 'lugares', label: 'Lugares poblados', value: stats.lugares_poblados, description: 'Lugares poblados identificados', icon: Landmark, tone: 'bg-orange-50 text-orange-700' },
   ]
 
-  // Prepare chart data
+  // Chart data
   const deptoData = [...stats.por_departamento]
     .sort((a, b) => b.cantidad - a.cantidad)
     .slice(0, 15)
@@ -159,20 +194,11 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
     beneficiarios: b.potenciales_beneficiarios,
   }))
 
-  const ipmData = stats.por_ipm_clasificacion.map((c) => ({
-    name: c.clasificacion,
-    value: c.cantidad,
-  }))
-
-  const sexoData = stats.personas_por_sexo.map((s) => ({
-    name: s.sexo,
-    value: s.cantidad,
-  }))
-
-  const insegData = stats.inseguridad_alimentaria.map((i) => ({
-    name: i.nivel,
-    value: i.cantidad,
-  }))
+  const ipmData = (stats.por_ipm_clasificacion ?? []).map((c) => ({ name: c.clasificacion, value: c.cantidad }))
+  const pmtData = (stats.por_pmt_clasificacion ?? []).map((c) => ({ name: c.clasificacion, value: c.cantidad }))
+  const nbiData = (stats.por_nbi_clasificacion ?? []).map((c) => ({ name: c.clasificacion, value: c.cantidad }))
+  const sexoData = stats.personas_por_sexo.map((s) => ({ name: s.sexo, value: s.cantidad }))
+  const insegData = stats.inseguridad_alimentaria.map((i) => ({ name: i.nivel, value: i.cantidad }))
 
   return (
     <div className="space-y-6">
@@ -201,8 +227,7 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
         <Card className="border-slate-200 bg-slate-950 text-white">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-slate-300">
-              <Scale className="h-4 w-4" />
-              Promedio IPM
+              <Scale className="h-4 w-4" /> Promedio IPM
             </div>
             <p className="mt-2 text-4xl font-bold tracking-tight">{stats.promedio_ipm.toFixed(2)}</p>
           </CardContent>
@@ -210,8 +235,7 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
         <Card className="border-slate-200 bg-indigo-950 text-white">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-indigo-300">
-              <Scale className="h-4 w-4" />
-              Promedio PMT
+              <Scale className="h-4 w-4" /> Promedio PMT
             </div>
             <p className="mt-2 text-4xl font-bold tracking-tight">{(stats.promedio_pmt ?? 0).toFixed(2)}</p>
           </CardContent>
@@ -219,20 +243,74 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
         <Card className="border-slate-200 bg-emerald-950 text-white">
           <CardContent className="p-5">
             <div className="flex items-center gap-2 text-sm font-medium text-emerald-300">
-              <Scale className="h-4 w-4" />
-              Promedio NBI
+              <Scale className="h-4 w-4" /> Promedio NBI
             </div>
             <p className="mt-2 text-4xl font-bold tracking-tight">{(stats.promedio_nbi ?? 0).toFixed(2)}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* ── Row: Departamentos bar chart + Beneficiarios bar chart ── */}
+      {/* ── Clasificaciones: IPM + PMT + NBI (siempre 3 columnas) ── */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <ClassificationPie title="Clasificación IPM" description="Pobreza multidimensional." data={ipmData} colors={COLORS_PIE} />
+        <ClassificationPie title="Clasificación PMT" description="Proxy means test." data={pmtData} colors={COLORS_PIE} />
+        <ClassificationPie title="Clasificación NBI" description="Necesidades básicas insatisfechas." data={nbiData} colors={COLORS_PIE} />
+      </div>
+
+      {/* ── Clasificación por departamento (stacked bars) ── */}
+      {(stats.ipm_por_departamento ?? []).length > 0 && (
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+          <StackedDeptoChart
+            title="IPM por departamento"
+            description="Clasificación de pobreza multidimensional por departamento."
+            raw={stats.ipm_por_departamento}
+          />
+          <StackedDeptoChart
+            title="PMT por departamento"
+            description="Proxy means test por departamento."
+            raw={stats.pmt_por_departamento ?? []}
+          />
+        </div>
+      )}
+
+      {(stats.nbi_por_departamento ?? []).length > 0 && (
+        <StackedDeptoChart
+          title="NBI por departamento"
+          description="Necesidades básicas insatisfechas por departamento."
+          raw={stats.nbi_por_departamento}
+        />
+      )}
+
+      {/* ── Sexo + Inseguridad ── */}
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <ClassificationPie title="Composición por sexo" description="Distribución de personas por género." data={sexoData} colors={COLORS_SEXO} />
+        <Card className="border-slate-200">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShieldAlert className="h-4 w-4 text-orange-600" />
+              Inseguridad alimentaria
+            </CardTitle>
+            <CardDescription>Hogares por nivel de inseguridad alimentaria.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={250}>
+              <PieChart>
+                <Pie data={insegData} cx="50%" cy="50%" innerRadius={50} outerRadius={85} paddingAngle={3} dataKey="value" label={PieLabel}>
+                  {insegData.map((_, i) => <Cell key={i} fill={COLORS_INSEG[i % COLORS_INSEG.length]} />)}
+                </Pie>
+                <Tooltip formatter={(v: number) => formatNumber(v)} />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ── Departamentos + Beneficiarios bar charts ── */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Distribucion por departamento</CardTitle>
-            <CardDescription>Top 15 departamentos por concentracion de hogares.</CardDescription>
+            <CardTitle className="text-base">Distribución por departamento</CardTitle>
+            <CardDescription>Top 15 departamentos por concentración de hogares.</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
@@ -249,7 +327,7 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
 
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Beneficiarios por institucion</CardTitle>
+            <CardTitle className="text-base">Beneficiarios por institución</CardTitle>
             <CardDescription>Personas distintas por CUI derivadas de los programas.</CardDescription>
           </CardHeader>
           <CardContent>
@@ -270,106 +348,19 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
         </Card>
       </div>
 
-      {/* ── Row: IPM Pie + Sexo Pie + Inseguridad Pie ── */}
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-3">
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle>Clasificacion IPM</CardTitle>
-            <CardDescription>Distribucion de hogares por nivel de pobreza multidimensional.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={ipmData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={PieLabel}
-                >
-                  {ipmData.map((_, i) => (
-                    <Cell key={i} fill={COLORS_PIE[i % COLORS_PIE.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => formatNumber(v)} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle>Composicion por sexo</CardTitle>
-            <CardDescription>Distribucion de personas por genero.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={sexoData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={PieLabel}
-                >
-                  {sexoData.map((_, i) => (
-                    <Cell key={i} fill={COLORS_SEXO[i % COLORS_SEXO.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => formatNumber(v)} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
-        <Card className="border-slate-200">
-          <CardHeader>
-            <CardTitle>Inseguridad alimentaria</CardTitle>
-            <CardDescription>Hogares por nivel de inseguridad alimentaria.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <PieChart>
-                <Pie
-                  data={insegData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={55}
-                  outerRadius={90}
-                  paddingAngle={3}
-                  dataKey="value"
-                  label={PieLabel}
-                >
-                  {insegData.map((_, i) => (
-                    <Cell key={i} fill={COLORS_INSEG[i % COLORS_INSEG.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(v: number) => formatNumber(v)} />
-              </PieChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* ── Row: Usuarios table + Estado territorial ── */}
+      {/* ── Usuarios table + Estado territorial ── */}
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Usuarios por institucion</CardTitle>
-            <CardDescription>Incluye el conteo de consultas guardadas por institucion.</CardDescription>
+            <CardTitle className="text-base">Usuarios por institución</CardTitle>
+            <CardDescription>Incluye el conteo de consultas guardadas por institución.</CardDescription>
           </CardHeader>
           <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Institucion</TableHead>
-                  <TableHead>Codigo</TableHead>
+                  <TableHead>Institución</TableHead>
+                  <TableHead>Código</TableHead>
                   <TableHead className="text-right">Usuarios</TableHead>
                   <TableHead className="text-right">Consultas</TableHead>
                 </TableRow>
@@ -398,8 +389,8 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
 
         <Card className="border-slate-200">
           <CardHeader>
-            <CardTitle>Estado territorial</CardTitle>
-            <CardDescription>Seguimiento de municipios y composicion por sexo.</CardDescription>
+            <CardTitle className="text-base">Estado territorial</CardTitle>
+            <CardDescription>Seguimiento de municipios y composición por sexo.</CardDescription>
           </CardHeader>
           <CardContent className="space-y-5">
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -408,18 +399,14 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
                   <CircleCheckBig className="h-4 w-4" />
                   Municipios finalizados
                 </div>
-                <p className="mt-2 text-3xl font-bold">
-                  {formatNumber(stats.municipios_finalizados)}
-                </p>
+                <p className="mt-2 text-3xl font-bold">{formatNumber(stats.municipios_finalizados)}</p>
               </div>
               <div className="rounded-xl bg-amber-50 p-4 text-amber-900">
                 <div className="flex items-center gap-2 text-sm font-medium">
                   <CircleDashed className="h-4 w-4" />
                   Municipios en progreso
                 </div>
-                <p className="mt-2 text-3xl font-bold">
-                  {formatNumber(stats.municipios_en_progreso)}
-                </p>
+                <p className="mt-2 text-3xl font-bold">{formatNumber(stats.municipios_en_progreso)}</p>
               </div>
             </div>
 
@@ -430,9 +417,7 @@ export default function AdminDashboard({ stats, isLoading }: Props) {
                     <UserRound className="h-4 w-4" />
                     {item.sexo}
                   </div>
-                  <p className="mt-2 text-2xl font-bold text-slate-950">
-                    {formatNumber(item.cantidad)}
-                  </p>
+                  <p className="mt-2 text-2xl font-bold text-slate-950">{formatNumber(item.cantidad)}</p>
                 </div>
               ))}
             </div>

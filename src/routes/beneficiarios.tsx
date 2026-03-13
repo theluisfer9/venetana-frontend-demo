@@ -100,14 +100,14 @@ function BeneficiarioDetailPanel({
                 <p>{data.area}</p>
               </div>
               <div className="col-span-2">
-                <p className="text-gray-500">Direccion</p>
+                <p className="text-gray-500">Dirección</p>
                 <p>{data.direccion || 'N/A'}</p>
               </div>
             </div>
 
             {/* Composicion del hogar */}
             <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Composicion del Hogar</p>
+              <p className="text-sm font-semibold text-gray-700 mb-2">Composición del Hogar</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-gray-500">Total Personas</p>
@@ -149,7 +149,7 @@ function BeneficiarioDetailPanel({
                   </Badge>
                 </div>
                 <div>
-                  <p className="text-gray-500">Clasificacion IPM</p>
+                  <p className="text-gray-500">Clasificación IPM</p>
                   <p className="font-medium">{data.ipm_gt_clasificacion}</p>
                 </div>
                 <div>
@@ -157,7 +157,7 @@ function BeneficiarioDetailPanel({
                   <p className="font-mono">{(data.pmt ?? 0).toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Clasificacion PMT</p>
+                  <p className="text-gray-500">Clasificación PMT</p>
                   <p className="font-medium">{data.pmt_clasificacion}</p>
                 </div>
                 <div>
@@ -165,7 +165,7 @@ function BeneficiarioDetailPanel({
                   <p className="font-mono">{(data.nbi ?? 0).toFixed(2)}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Clasificacion NBI</p>
+                  <p className="text-gray-500">Clasificación NBI</p>
                   <p className="font-medium">{data.nbi_clasificacion}</p>
                 </div>
               </div>
@@ -173,14 +173,14 @@ function BeneficiarioDetailPanel({
 
             {/* Demografia */}
             <div>
-              <p className="text-sm font-semibold text-gray-700 mb-2">Demografia</p>
+              <p className="text-sm font-semibold text-gray-700 mb-2">Demografía</p>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
                   <p className="text-gray-500">Tipo Jefatura</p>
                   <p>{data.tipo_jefatura}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Comunidad Linguistica</p>
+                  <p className="text-gray-500">Comunidad Lingüística</p>
                   <p>{data.comunidad_linguistica}</p>
                 </div>
                 <div className="col-span-2">
@@ -214,7 +214,7 @@ function BeneficiarioDetailPanel({
                   <p>{data.primera_infancia ?? 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Ninos</p>
+                  <p className="text-gray-500">Niños</p>
                   <p>{data.ninos ?? 'N/A'}</p>
                 </div>
                 <div>
@@ -222,7 +222,7 @@ function BeneficiarioDetailPanel({
                   <p>{data.adolescentes ?? 'N/A'}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Jovenes</p>
+                  <p className="text-gray-500">Jóvenes</p>
                   <p>{data.jovenes ?? 'N/A'}</p>
                 </div>
                 <div>
