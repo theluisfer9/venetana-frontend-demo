@@ -1,4 +1,4 @@
-const BASE_URL = 'http://localhost:8000/api/v1'
+const BASE_URL = 'http://localhost:8003/api/v1'
 
 const TOKEN_KEY = 'access_token'
 const REFRESH_TOKEN_KEY = 'refresh_token'
@@ -110,7 +110,7 @@ async function download(path: string, filename: string): Promise<void> {
 
   const blob = await response.blob()
   const disposition = response.headers.get('Content-Disposition')
-  const serverFilename = disposition?.split('filename="')[1]?.replace('"', '')
+  const serverFilename = disposition?.match(/filename="?([^";\n]+)"?/)?.[1]?.trim()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -150,7 +150,7 @@ async function downloadPost(path: string, body: unknown, filename: string): Prom
 
   const blob = await response.blob()
   const disposition = response.headers.get('Content-Disposition')
-  const serverFilename = disposition?.split('filename="')[1]?.replace('"', '')
+  const serverFilename = disposition?.match(/filename="?([^";\n]+)"?/)?.[1]?.trim()
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url

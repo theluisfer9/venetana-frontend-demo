@@ -6,6 +6,7 @@ interface Props {
   columns: DataSourceColumn[]
   selected: string[]
   onChange: (selected: string[]) => void
+  agrupar: boolean
 }
 
 const CATEGORY_LABELS: Record<string, string> = {
@@ -15,7 +16,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   INTERVENTION: 'Intervenciones',
 }
 
-export default function QueryColumnSelector({ columns, selected, onChange }: Props) {
+export default function QueryColumnSelector({ columns, selected, onChange, agrupar }: Props) {
   const selectable = columns.filter((c) => c.is_selectable)
   const grouped = new Map<string, DataSourceColumn[]>()
   for (const col of selectable) {
@@ -24,7 +25,17 @@ export default function QueryColumnSelector({ columns, selected, onChange }: Pro
     grouped.set(col.category, group)
   }
 
+  const MANDATORY_GEO = ['departamento', 'municipio']
+  const mandatoryColumns = agrupar
+    ? new Set(
+        selectable
+          .filter((c) => MANDATORY_GEO.some((m) => c.column_name.toLowerCase().includes(m)))
+          .map((c) => c.column_name),
+      )
+    : new Set<string>()
+
   function toggle(colName: string) {
+    if (mandatoryColumns.has(colName)) return
     if (selected.includes(colName)) {
       onChange(selected.filter((c) => c !== colName))
     } else {
@@ -49,6 +60,7 @@ export default function QueryColumnSelector({ columns, selected, onChange }: Pro
                   id={`col-${col.column_name}`}
                   checked={selected.includes(col.column_name)}
                   onCheckedChange={() => toggle(col.column_name)}
+                  disabled={mandatoryColumns.has(col.column_name)}
                   className="h-3.5 w-3.5"
                 />
                 <label

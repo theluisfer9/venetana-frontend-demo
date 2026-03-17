@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { apiClient } from '@/lib/api'
 import { isAuthenticated } from '@/hooks/use-auth'
+import { toast } from 'sonner'
+import { renderExportToast } from '@/components/ExportToast'
 import type {
   AvailableDataSource,
   QueryExecuteRequest,
@@ -117,9 +119,9 @@ export function useDeleteSavedQuery() {
 // ── Export saved query ──
 
 const FORMAT_EXT: Record<string, string> = {
-  excel: 'xlsx',
+  excel: 'zip',
   csv: 'csv',
-  pdf: 'pdf',
+  pdf: 'zip',
 }
 
 export function useExportSavedQuery() {
@@ -134,10 +136,17 @@ export function useExportSavedQuery() {
   })
 }
 
+const FORMAT_LABEL: Record<string, string> = {
+  excel: 'Excel',
+  csv: 'CSV',
+  pdf: 'PDF',
+}
+
 export function useExportQueryExecute() {
   return useMutation({
     mutationFn: ({
       formato,
+      toastId: _toastId,
       ...body
     }: {
       datasource_id: string
@@ -145,16 +154,31 @@ export function useExportQueryExecute() {
       filters: QueryFilter[]
       group_by?: string[]
       aggregations?: Aggregation[]
+      agrupar?: boolean
       offset?: number
       limit?: number
       formato: 'csv' | 'excel' | 'pdf'
+      toastId?: string | number
     }) => {
       const ext = FORMAT_EXT[formato] ?? formato
       return apiClient.downloadPost(
         `/queries/execute/export?formato=${formato}`,
-        { offset: 0, limit: 50000, ...body },
+        body,
         `consulta_${new Date().toISOString().slice(0, 10)}.${ext}`,
       )
+    },
+    onMutate: (variables) => {
+      const label = FORMAT_LABEL[variables.formato] ?? variables.formato
+      const toastId = renderExportToast(label)
+      variables.toastId = toastId
+    },
+    onSuccess: (_data, variables) => {
+      const label = FORMAT_LABEL[variables.formato] ?? variables.formato
+      toast.success(`Archivo ${label} descargado correctamente`, { id: variables.toastId, duration: 3000 })
+    },
+    onError: (_error, variables) => {
+      const label = FORMAT_LABEL[variables.formato] ?? variables.formato
+      toast.error(`Error al generar el archivo ${label}`, { id: variables.toastId, duration: 4000 })
     },
   })
 }

@@ -67,6 +67,7 @@ function QueryBuilderPage() {
   const [queryDescription, setQueryDescription] = useState('')
   const [institutionId, setInstitutionId] = useState<string>('')
   const [isShared, setIsShared] = useState(false)
+  const [agrupar, setAgrupar] = useState(true)
   const [showSave, setShowSave] = useState(false)
   const [loaded, setLoaded] = useState(false)
 
@@ -84,6 +85,7 @@ function QueryBuilderPage() {
       setFilters(savedDetail.filters)
       setGroupBy(savedDetail.group_by || [])
       setAggregations(savedDetail.aggregations || [])
+      setAgrupar(savedDetail.agrupar ?? true)
       setQueryName(savedDetail.name)
       setQueryDescription(savedDetail.description ?? '')
       setInstitutionId(savedDetail.institution_id ?? '')
@@ -107,6 +109,20 @@ function QueryBuilderPage() {
     }
   }, [groupBy.length])
 
+  // Auto-select mandatory GEO columns when datasource loads (new query only) and agrupar is on
+  useEffect(() => {
+    if (currentDs && !isEditing && !loaded && agrupar) {
+      const MANDATORY_GEO = ['departamento', 'municipio']
+      const geoColumns = currentDs.columns
+        .filter((c) => c.is_selectable && MANDATORY_GEO.some((m) => c.column_name.toLowerCase().includes(m)))
+        .map((c) => c.column_name)
+      setSelectedColumns((prev) => {
+        const merged = new Set([...geoColumns, ...prev])
+        return Array.from(merged)
+      })
+    }
+  }, [currentDs, isEditing, loaded, agrupar])
+
   // Auto-fill institution when datasource loads (and not editing a saved query)
   useEffect(() => {
     if (currentDs && !isEditing && !loaded) {
@@ -123,6 +139,7 @@ function QueryBuilderPage() {
     setAggregations([])
     setResults(undefined)
     setOffset(0)
+    setAgrupar(true)
     setInstitutionId('')
   }
 
@@ -153,6 +170,7 @@ function QueryBuilderPage() {
         filters: coercedFilters as QueryFilter[],
         group_by: groupBy.length > 0 ? groupBy : undefined,
         aggregations: aggregations.length > 0 ? aggregations : undefined,
+        agrupar,
         offset: newOffset,
         limit,
       },
@@ -182,19 +200,15 @@ function QueryBuilderPage() {
       return { ...f, value }
     })
 
-    exportQuery.mutate(
-      {
-        datasource_id: datasourceId,
-        columns: selectedColumns,
-        filters: coercedFilters as QueryFilter[],
-        group_by: groupBy.length > 0 ? groupBy : undefined,
-        aggregations: aggregations.length > 0 ? aggregations : undefined,
-        formato,
-      },
-      {
-        onError: () => toast.error('Error al exportar la consulta'),
-      },
-    )
+    exportQuery.mutate({
+      datasource_id: datasourceId,
+      columns: selectedColumns,
+      filters: coercedFilters as QueryFilter[],
+      group_by: groupBy.length > 0 ? groupBy : undefined,
+      aggregations: aggregations.length > 0 ? aggregations : undefined,
+      agrupar,
+      formato,
+    })
   }
 
   function handleExecuteSaved(newOffset = 0) {
@@ -227,6 +241,7 @@ function QueryBuilderPage() {
         filters: filterPayload,
         group_by: groupBy.length > 0 ? groupBy : [],
         aggregations: groupBy.length > 0 ? aggregations.map((a) => ({ column: a.column, function: a.function })) : [],
+        agrupar,
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -254,6 +269,7 @@ function QueryBuilderPage() {
         filters: filterPayload,
         group_by: groupBy.length > 0 ? groupBy : [],
         aggregations: groupBy.length > 0 ? aggregations.map((a) => ({ column: a.column, function: a.function })) : [],
+        agrupar,
         institution_id: institutionId || null,
         is_shared: isShared,
       },
@@ -544,6 +560,27 @@ function QueryBuilderPage() {
         {/* ── Columns, Filters, Execute ── */}
         {currentDs && (
           <>
+            {/* Toggle agrupar */}
+            {!isViewOnly && (
+              <Card>
+                <CardContent className="p-4 flex items-center gap-3">
+                  <Switch
+                    id="agrupar-toggle"
+                    checked={agrupar}
+                    onCheckedChange={setAgrupar}
+                  />
+                  <Label htmlFor="agrupar-toggle" className="text-sm cursor-pointer">
+                    Agrupar por departamento / municipio
+                  </Label>
+                  <span className="text-xs text-gray-400">
+                    {agrupar
+                      ? 'El export genera un archivo por departamento'
+                      : 'El export genera archivos de hasta 10K filas'}
+                  </span>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Columnas y agrupaciones: ocultas para usuario institucional sin permisos */}
             {!isViewOnly && (
               <Card>
@@ -552,6 +589,7 @@ function QueryBuilderPage() {
                     columns={currentDs.columns}
                     selected={selectedColumns}
                     onChange={setSelectedColumns}
+                    agrupar={agrupar}
                   />
                 </CardContent>
               </Card>
@@ -610,45 +648,38 @@ function QueryBuilderPage() {
                 Ejecutar
               </Button>
 
-              {exportQuery.isPending ? (
-                <div className="flex items-center gap-2 border rounded-lg px-5 py-2 text-sm text-gray-500">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  Descargando...
-                </div>
-              ) : (
-                <div className="flex items-center border rounded-lg overflow-hidden">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-green-50 hover:text-green-700"
-                    onClick={() => handleExport('excel')}
-                    disabled={selectedColumns.length === 0}
-                  >
-                    <FileSpreadsheet className="h-3.5 w-3.5" />
-                    Excel
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-blue-50 hover:text-blue-700"
-                    onClick={() => handleExport('csv')}
-                    disabled={selectedColumns.length === 0}
-                  >
-                    <FileDown className="h-3.5 w-3.5" />
-                    CSV
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="gap-1 text-xs h-9 rounded-none px-3 hover:bg-red-50 hover:text-red-700"
-                    onClick={() => handleExport('pdf')}
-                    disabled={selectedColumns.length === 0}
-                  >
-                    <FileText className="h-3.5 w-3.5" />
-                    PDF
-                  </Button>
-                </div>
-              )}
+              <div className="flex items-center border rounded-lg overflow-hidden">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-green-50 hover:text-green-700"
+                  onClick={() => handleExport('excel')}
+                  disabled={selectedColumns.length === 0 || exportQuery.isPending}
+                >
+                  <FileSpreadsheet className="h-3.5 w-3.5" />
+                  Excel
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-xs h-9 rounded-none border-r px-3 hover:bg-blue-50 hover:text-blue-700"
+                  onClick={() => handleExport('csv')}
+                  disabled={selectedColumns.length === 0 || exportQuery.isPending}
+                >
+                  <FileDown className="h-3.5 w-3.5" />
+                  CSV
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="gap-1 text-xs h-9 rounded-none px-3 hover:bg-red-50 hover:text-red-700"
+                  onClick={() => handleExport('pdf')}
+                  disabled={selectedColumns.length === 0 || exportQuery.isPending}
+                >
+                  <FileText className="h-3.5 w-3.5" />
+                  PDF
+                </Button>
+              </div>
             </div>
           </>
         )}

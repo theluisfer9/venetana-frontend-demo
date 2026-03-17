@@ -32,6 +32,7 @@ export interface QueryExecuteRequest {
   filters: QueryFilter[]
   group_by?: string[]
   aggregations?: Aggregation[]
+  agrupar?: boolean
   offset: number
   limit: number
 }
@@ -58,6 +59,7 @@ export interface SavedQueryListItem {
   column_count: number
   filter_count: number
   has_aggregations: boolean
+  agrupar: boolean
   is_shared: boolean
   institution_id: string | null
   institution_name: string | null
@@ -74,6 +76,7 @@ export interface SavedQueryDetail {
   filters: QueryFilter[]
   group_by: string[]
   aggregations: Aggregation[]
+  agrupar: boolean
   is_shared: boolean
   institution_id: string | null
   institution_name: string | null
@@ -88,6 +91,7 @@ export interface SavedQueryCreateBody {
   filters: { column: string; op: string; value: unknown }[]
   group_by?: string[]
   aggregations?: Aggregation[]
+  agrupar?: boolean
   institution_id?: string | null
   is_shared?: boolean
 }
@@ -99,6 +103,7 @@ export interface SavedQueryUpdateBody {
   filters?: { column: string; op: string; value: unknown }[]
   group_by?: string[]
   aggregations?: Aggregation[]
+  agrupar?: boolean
   institution_id?: string | null
   is_shared?: boolean
 }
