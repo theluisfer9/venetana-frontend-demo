@@ -40,7 +40,7 @@ function UsersPage() {
   }
 
   const canCreate = can('users:create')
-  const canEdit = can('users:edit')
+  const canEdit = can('users:update')
   const canDelete = can('users:delete')
 
   const [page, setPage] = useState(1)

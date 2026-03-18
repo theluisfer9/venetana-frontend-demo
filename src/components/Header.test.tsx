@@ -96,7 +96,7 @@ describe('Header component', () => {
     mockUseCurrentUser.mockReturnValue({ data: undefined })
 
     await renderHeader()
-    expect(screen.getAllByText('Magica').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Mágica').length).toBeGreaterThan(0)
   })
 
   it('shows "Iniciar sesion" when not authenticated', async () => {
@@ -104,7 +104,7 @@ describe('Header component', () => {
     mockUseCurrentUser.mockReturnValue({ data: undefined })
 
     await renderHeader()
-    expect(screen.getByText('Iniciar sesion')).toBeDefined()
+    expect(screen.getByText('Iniciar sesión')).toBeDefined()
   })
 
   it('does NOT show admin links when not authenticated', async () => {
@@ -160,6 +160,6 @@ describe('Header component', () => {
     mockUseCurrentUser.mockReturnValue({ data: { role_code: 'analyst' } })
 
     await renderHeader()
-    expect(screen.getByText('Cerrar sesion')).toBeDefined()
+    expect(screen.getByText('Cerrar sesión')).toBeDefined()
   })
 })

@@ -2,8 +2,10 @@ import { Link } from '@tanstack/react-router'
 
 import { useState } from 'react'
 import { Building2, Database, Home, LayoutDashboard, LogIn, LogOut, Menu, Shield, Users, X } from 'lucide-react'
-import { isAuthenticated, useLogout, usePermissions } from '@/hooks/use-auth'
+import { isAdminRole, isAuthenticated, useCurrentUser } from '@/hooks/use-auth'
 import { useNavigate } from '@tanstack/react-router'
+import { apiClient, clearTokens } from '@/lib/api'
+import { hasModuleAccess } from '@/lib/permissions'
 
 const linkClass =
   'flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors mb-2'
@@ -13,9 +15,16 @@ const activeLinkClass =
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false)
   const authed = isAuthenticated()
-  const logout = useLogout()
   const navigate = useNavigate()
-  const { isAdmin, canAccessModule } = usePermissions()
+  let currentUser = undefined
+  try {
+    currentUser = useCurrentUser().data
+  } catch {
+    currentUser = undefined
+  }
+  const isAdmin = isAdminRole(currentUser?.role_code)
+  const canAccessModule = (module: 'users' | 'roles' | 'datasources') =>
+    hasModuleAccess(currentUser?.permissions, module)
   const showAdminSection = authed && (isAdmin
     || canAccessModule('users')
     || canAccessModule('roles')
@@ -165,11 +174,14 @@ export default function Header() {
 
               <div className="border-t border-gray-700 mt-4 pt-4">
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     setIsOpen(false)
-                    logout.mutate(undefined, {
-                      onSettled: () => navigate({ to: '/login' }),
-                    })
+                    try {
+                      await apiClient.post('/auth/logout')
+                    } finally {
+                      clearTokens()
+                      navigate({ to: '/login' })
+                    }
                   }}
                   className={`${linkClass} w-full text-left text-red-400 hover:text-red-300`}
                 >

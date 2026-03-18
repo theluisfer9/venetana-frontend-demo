@@ -45,7 +45,7 @@ function InstitutionsPage() {
   }
 
   const canCreate = can('users:create')
-  const canEdit = can('users:edit')
+  const canEdit = can('users:update')
   const canDelete = can('users:delete')
 
   const { data: institutions, isLoading } = useInstitutions(true)
